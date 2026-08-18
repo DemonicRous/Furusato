@@ -44,7 +44,8 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
     private String exportLabelKey = "furusato.diagnostics.export";
     private String openLabelKey = "furusato.diagnostics.openFolder";
     private Category activeCategory = Category.OVERVIEW;
-    private int scrollOffset;
+    private final SmoothScrollState scroll = new SmoothScrollState();
+    private long lastFrameNanos = System.nanoTime();
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -317,7 +318,7 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
 
     private void selectCategory(Category category) {
         activeCategory = category;
-        scrollOffset = 0;
+        scroll.reset();
         initGui();
     }
 
@@ -402,10 +403,13 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         List<Row> visibleRows = visibleRows();
         int capacity = FurusatoGuiLayout.visibleRows(
                 panelHeight, PANEL_PADDING, rowHeight);
-        scrollOffset = FurusatoGuiLayout.clampScroll(
-                scrollOffset, visibleRows.size(), capacity);
-        int lastRow = Math.min(visibleRows.size(), scrollOffset + capacity);
-        List<Row> displayedRows = visibleRows.subList(scrollOffset, lastRow);
+        scroll.setMaximum(Math.max(0, visibleRows.size() - capacity));
+        long now = System.nanoTime();
+        double displayedOffset = scroll.update((now - lastFrameNanos) / 1.0E9D);
+        lastFrameNanos = now;
+        int firstRow = Math.max(0, (int) Math.floor(displayedOffset));
+        int lastRow = Math.min(visibleRows.size(), firstRow + capacity + 2);
+        List<Row> displayedRows = visibleRows.subList(firstRow, lastRow);
         int labelWidth = 0;
         for (Row row : displayedRows) {
             labelWidth = Math.max(labelWidth,
@@ -417,10 +421,15 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         int maxValueWidth = Math.max(60,
                 contentRight - valueX - PANEL_PADDING);
         Row hoveredRow = null;
+        int clipTop = panelTop + PANEL_PADDING;
+        int clipBottom = panelTop + panelHeight - PANEL_PADDING;
+        beginScissor(contentLeft + 2, clipTop, contentRight - 2, clipBottom);
         for (int index = 0; index < displayedRows.size(); index++) {
             Row row = displayedRows.get(index);
-            int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
-            if ((index & 1) == 1) {
+            int absoluteIndex = firstRow + index;
+            int rowTop = panelTop + PANEL_PADDING
+                    + (int) Math.round((absoluteIndex - displayedOffset) * rowHeight);
+            if ((absoluteIndex & 1) == 1) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
                         rowTop + rowHeight, 0x10000000);
             }
@@ -435,8 +444,9 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
             drawString(fontRenderer, fitText(row.value, maxValueWidth),
                     valueX, textY, row.color);
         }
+        endScissor();
         drawScrollBar(contentRight, panelTop, panelHeight,
-                visibleRows.size(), capacity);
+                visibleRows.size(), capacity, displayedOffset);
         super.drawScreen(mouseX, mouseY, partialTicks);
         if (hoveredRow != null
                 && fontRenderer.getStringWidth(hoveredRow.value) > maxValueWidth) {
@@ -458,7 +468,7 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
     }
 
     private void drawScrollBar(int contentRight, int panelTop, int panelHeight,
-            int rowCount, int capacity) {
+            int rowCount, int capacity, double displayedOffset) {
         if (rowCount <= capacity) {
             return;
         }
@@ -467,7 +477,8 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         int trackHeight = trackBottom - trackTop;
         int thumbHeight = Math.max(8, trackHeight * capacity / rowCount);
         int maxOffset = rowCount - capacity;
-        int thumbTop = trackTop + (trackHeight - thumbHeight) * scrollOffset / maxOffset;
+        int thumbTop = trackTop + (int) Math.round(
+                (trackHeight - thumbHeight) * displayedOffset / maxOffset);
         drawRect(contentRight - 5, trackTop, contentRight - 3, trackBottom, 0x44000000);
         drawRect(contentRight - 5, thumbTop, contentRight - 3,
                 thumbTop + thumbHeight, 0xFFAAAAAA);
@@ -478,12 +489,11 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
         if (wheel != 0) {
-            scrollOffset += wheel < 0 ? 1 : -1;
             int headerHeight = isCompactLayout() ? 82 : 58;
             int capacity = FurusatoGuiLayout.visibleRows(
                     panelHeight(headerHeight), PANEL_PADDING, 14);
-            scrollOffset = FurusatoGuiLayout.clampScroll(
-                    scrollOffset, visibleRows().size(), capacity);
+            scroll.setMaximum(Math.max(0, visibleRows().size() - capacity));
+            scroll.scrollBy(wheel < 0 ? 1.0D : -1.0D);
         }
     }
 

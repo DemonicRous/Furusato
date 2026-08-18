@@ -1,11 +1,25 @@
 package com.demonicrous.furusato.client;
 
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.ScaledResolution;
+import org.lwjgl.opengl.GL11;
 
 /** Shared vanilla-style rendering primitives for Furusato configuration screens. */
 abstract class GuiFurusatoScreen extends GuiScreen {
     protected final int responsiveContentWidth(int minimum, int maximum, int margin) {
         return FurusatoGuiLayout.contentWidth(width, minimum, maximum, margin);
+    }
+
+    protected final void beginScissor(int left, int top, int right, int bottom) {
+        int scale = new ScaledResolution(mc).getScaleFactor();
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(left * scale, mc.displayHeight - bottom * scale,
+                Math.max(0, right - left) * scale,
+                Math.max(0, bottom - top) * scale);
+    }
+
+    protected final void endScissor() {
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 
     /** Matches the background, border colors and padding of vanilla tooltips. */
