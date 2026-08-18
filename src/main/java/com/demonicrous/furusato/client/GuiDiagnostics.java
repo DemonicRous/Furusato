@@ -19,6 +19,7 @@ import net.minecraftforge.common.ForgeVersion;
 public final class GuiDiagnostics extends GuiScreen {
     private static final int COPY_REPORT = 10;
     private static final int DONE = 200;
+    private static final int PANEL_PADDING = 10;
     private static final String UNICODE_PATCH = "unicode_gui_scale";
 
     private final GuiScreen parentScreen;
@@ -164,7 +165,7 @@ public final class GuiDiagnostics extends GuiScreen {
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 16;
-        int panelHeight = rows.size() * rowHeight + 16;
+        int panelHeight = rows.size() * rowHeight + PANEL_PADDING * 2;
         int groupHeight = panelHeight + 25;
         int groupTop = Math.max(10, (height - 60 - groupHeight) / 2);
         int panelTop = groupTop + 25;
@@ -181,12 +182,13 @@ public final class GuiDiagnostics extends GuiScreen {
                     fontRenderer.getStringWidth(row.label + ":"));
         }
         labelWidth = Math.min(labelWidth, contentWidth / 2 - 12);
-        int labelX = contentLeft + 10;
+        int labelX = contentLeft + PANEL_PADDING;
         int valueX = labelX + labelWidth + 18;
-        int maxValueWidth = Math.max(60, contentRight - valueX - 10);
+        int maxValueWidth = Math.max(60,
+                contentRight - valueX - PANEL_PADDING);
         for (int index = 0; index < rows.size(); index++) {
             Row row = rows.get(index);
-            int rowTop = panelTop + 8 + index * rowHeight;
+            int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
             if ((index & 1) == 1) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
                         rowTop + rowHeight, 0x10000000);
