@@ -2,7 +2,6 @@ package com.demonicrous.furusato.client;
 
 import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -12,7 +11,6 @@ import net.minecraft.client.settings.GameSettings;
 
 /** Font and GUI scale settings inspired by modern Minecraft versions. */
 public final class GuiFontSettings extends GuiScreen {
-    private static final int PREVIOUS_SCALE = 10;
     private static final int NEXT_SCALE = 11;
     private static final int FORCE_UNICODE = 12;
     private static final int PRESERVE_ODD_SCALE = 13;
@@ -33,9 +31,8 @@ public final class GuiFontSettings extends GuiScreen {
         int center = width / 2;
         int top = height / 2 - 55;
 
-        addButton(new GuiButton(PREVIOUS_SCALE, center - 100, top, 20, 20, "<"));
         scaleButton = addButton(new GuiResponsiveButton(
-                NEXT_SCALE, center - 75, top, 175, 20, ""));
+                NEXT_SCALE, center - 100, top, 200, 20, ""));
         unicodeButton = addButton(new GuiResponsiveButton(
                 FORCE_UNICODE, center - 100, top + 28, 200, 20, ""));
         patchButton = addButton(new GuiResponsiveButton(
@@ -52,11 +49,10 @@ public final class GuiFontSettings extends GuiScreen {
         }
 
         GameSettings settings = mc.gameSettings;
-        if (button.id == PREVIOUS_SCALE) {
-            settings.guiScale = GuiScalePolicy.previous(settings.guiScale);
-            applyScale();
-        } else if (button.id == NEXT_SCALE) {
-            settings.guiScale = GuiScalePolicy.next(settings.guiScale);
+        if (button.id == NEXT_SCALE) {
+            int maximum = GuiScalePolicy.maximumForDimensions(
+                    mc.displayWidth, mc.displayHeight);
+            settings.guiScale = GuiScalePolicy.next(settings.guiScale, maximum);
             applyScale();
         } else if (button.id == FORCE_UNICODE) {
             settings.forceUnicodeFont = !settings.forceUnicodeFont;
@@ -90,12 +86,12 @@ public final class GuiFontSettings extends GuiScreen {
                 : Integer.toString(selected);
         int effective = new ScaledResolution(mc).getScaleFactor();
         scaleButton.setFullText(fontRenderer, I18n.format(
-                "furusato.font.guiScale", selectedText, effective));
+                "furusato.font.guiScale.short", selectedText, effective));
         unicodeButton.setFullText(fontRenderer, I18n.format(
-                "furusato.font.forceUnicode",
+                "furusato.font.forceUnicode.short",
                 I18n.format(mc.gameSettings.forceUnicodeFont ? "options.on" : "options.off")));
         patchButton.setFullText(fontRenderer, I18n.format(
-                "furusato.font.preserveOddScale",
+                "furusato.font.preserveOddScale.short",
                 I18n.format(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled()
                         ? "options.on" : "options.off")));
     }
@@ -109,7 +105,11 @@ public final class GuiFontSettings extends GuiScreen {
         int previewTop = height / 2 + 22;
         drawRect(width / 2 - 100, previewTop, width / 2 + 100,
                 previewTop + 38, 0x88000000);
-        drawCenteredString(fontRenderer, I18n.format("furusato.font.preview"),
+        drawCenteredString(fontRenderer, I18n.format(
+                        "furusato.font.previewMode",
+                        I18n.format(mc.gameSettings.forceUnicodeFont
+                                ? "furusato.font.mode.unicode"
+                                : "furusato.font.mode.default")),
                 width / 2, previewTop + 7, 0xA0A0A0);
         drawCenteredString(fontRenderer, I18n.format("furusato.font.sample"),
                 width / 2, previewTop + 21, 0xFFFFFF);
@@ -117,9 +117,6 @@ public final class GuiFontSettings extends GuiScreen {
         drawCenteredLines(I18n.format("furusato.font.restartHint"),
                 previewTop + 43, 0x808080);
         super.drawScreen(mouseX, mouseY, partialTicks);
-        drawButtonTooltip(scaleButton, mouseX, mouseY);
-        drawButtonTooltip(unicodeButton, mouseX, mouseY);
-        drawButtonTooltip(patchButton, mouseX, mouseY);
     }
 
     private void drawCenteredLines(String text, int top, int color) {
@@ -128,15 +125,6 @@ public final class GuiFontSettings extends GuiScreen {
         for (int index = 0; index < lines.size(); index++) {
             drawCenteredString(fontRenderer, lines.get(index),
                     width / 2, top + index * fontRenderer.FONT_HEIGHT, color);
-        }
-    }
-
-    private void drawButtonTooltip(GuiResponsiveButton button, int mouseX, int mouseY) {
-        if (button != null && button.hasHiddenText() && button.isMouseOver(mouseX, mouseY)) {
-            List<String> lines = fontRenderer.listFormattedStringToWidth(
-                    button.getFullText(), Math.max(80, width - 40));
-            drawHoveringText(lines.isEmpty()
-                    ? Collections.singletonList(button.getFullText()) : lines, mouseX, mouseY);
         }
     }
 

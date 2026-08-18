@@ -28,4 +28,13 @@ public final class GuiScalePolicyTest {
         assertEquals(GuiScalePolicy.AUTO, GuiScalePolicy.normalize(-1));
         assertEquals(GuiScalePolicy.AUTO, GuiScalePolicy.normalize(9));
     }
+
+    @Test
+    public void cyclesOnlyThroughScalesSupportedByTheWindow() {
+        assertEquals(2, GuiScalePolicy.maximumForDimensions(640, 480));
+        assertEquals(4, GuiScalePolicy.maximumForDimensions(1920, 1080));
+        assertEquals(6, GuiScalePolicy.maximumForDimensions(2560, 1440));
+        assertEquals(GuiScalePolicy.AUTO, GuiScalePolicy.next(5, 5));
+        assertEquals(5, GuiScalePolicy.next(4, 5));
+    }
 }

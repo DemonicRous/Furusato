@@ -15,8 +15,24 @@ public final class GuiScalePolicy {
     }
 
     public static int next(int value) {
+        return next(value, MAX_MANUAL);
+    }
+
+    public static int next(int value, int maximum) {
         int normalized = normalize(value);
-        return normalized >= MAX_MANUAL ? AUTO : normalized + 1;
+        int cappedMaximum = Math.max(MIN_MANUAL, Math.min(MAX_MANUAL, maximum));
+        return normalized >= cappedMaximum ? AUTO : normalized + 1;
+    }
+
+    /** Mirrors ScaledResolution's minimum logical size constraint. */
+    public static int maximumForDimensions(int displayWidth, int displayHeight) {
+        int maximum = MIN_MANUAL;
+        while (maximum < MAX_MANUAL
+                && displayWidth / (maximum + 1) >= 320
+                && displayHeight / (maximum + 1) >= 240) {
+            maximum++;
+        }
+        return maximum;
     }
 
     public static int normalize(int value) {
@@ -26,4 +42,3 @@ public final class GuiScalePolicy {
         return value;
     }
 }
-
