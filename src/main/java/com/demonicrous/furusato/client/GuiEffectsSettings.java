@@ -119,6 +119,9 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
         int columnWidth = (panelWidth - 28 - gap) / 2;
         int first = left + 14;
         int second = first + columnWidth + gap;
+        drawFurusatoPanel(first + 4, top + 2, columnWidth - 8, 88);
+        drawFurusatoPanel(second + 4, top + 2, columnWidth - 8, 50);
+        drawFurusatoPanel(second + 4, top + 70, columnWidth - 8, 50);
         drawString(fontRenderer, I18n.format("furusato.effects.hotbarSpeed",
                         denormalize(hotbarDuration.getValue(), 50, 180)),
                 first + 2, top + 59, 0xA0A0A0);
