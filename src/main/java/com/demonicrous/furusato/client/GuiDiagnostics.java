@@ -412,15 +412,17 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         int lastRow = Math.min(visibleRows.size(), firstRow + capacity + 2);
         List<Row> displayedRows = visibleRows.subList(firstRow, lastRow);
         int labelWidth = 0;
-        for (Row row : displayedRows) {
+        for (Row row : visibleRows) {
             labelWidth = Math.max(labelWidth,
                     fontRenderer.getStringWidth(row.label + ":"));
         }
         labelWidth = Math.min(labelWidth, contentWidth / 2 - 12);
         int labelX = contentLeft + PANEL_PADDING;
         int valueX = labelX + labelWidth + 18;
+        int scrollBarX = contentRight - PANEL_PADDING - GuiFurusatoScrollBar.WIDTH;
+        int rowsRight = scrollBarX - 8;
         int maxValueWidth = Math.max(60,
-                contentRight - valueX - PANEL_PADDING - 18);
+                rowsRight - valueX);
         Row hoveredRow = null;
         int clipTop = panelTop + PANEL_PADDING;
         int clipBottom = panelTop + panelHeight - PANEL_PADDING;
@@ -431,12 +433,12 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
             int rowTop = panelTop + PANEL_PADDING
                     + (int) Math.round((absoluteIndex - displayedOffset) * rowHeight);
             if ((absoluteIndex & 1) == 1) {
-                drawRect(contentLeft + 2, rowTop, contentRight - 2,
+                drawRect(contentLeft + 2, rowTop, rowsRight,
                         rowTop + rowHeight, 0x10000000);
             }
-            if (mouseX >= contentLeft && mouseX < contentRight
+            if (mouseX >= contentLeft && mouseX < rowsRight
                     && mouseY >= rowTop && mouseY < rowTop + rowHeight) {
-                drawRect(contentLeft + 2, rowTop, contentRight - 2,
+                drawRect(contentLeft + 2, rowTop, rowsRight,
                         rowTop + rowHeight, 0x22FFFFFF);
                 hoveredRow = row;
             }
@@ -446,9 +448,9 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
                     valueX, textY, row.color);
         }
         endScissor();
-        scrollBar.setBounds(contentRight - 24, clipTop,
+        scrollBar.setBounds(scrollBarX, clipTop,
                 clipBottom - clipTop, visibleRows.size(), capacity);
-        scrollBar.draw(mc);
+        scrollBar.draw(mc, mouseX, mouseY);
         super.drawScreen(mouseX, mouseY, partialTicks);
         if (hoveredRow != null
                 && fontRenderer.getStringWidth(hoveredRow.value) > maxValueWidth) {

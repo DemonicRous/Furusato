@@ -2,14 +2,11 @@ package com.demonicrous.furusato.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.util.ResourceLocation;
 
-/** Draggable scrollbar using Minecraft 1.12.2 Creative Inventory's thumb. */
+/** Draggable scrollbar matching Furusato's standalone slider. */
 final class GuiFurusatoScrollBar extends Gui {
-    private static final ResourceLocation CREATIVE_TABS = new ResourceLocation(
-            "minecraft", "textures/gui/container/creative_inventory/tabs.png");
-    private static final int WIDTH = 12;
-    private static final int THUMB_HEIGHT = 15;
+    static final int WIDTH = 9;
+    private static final int THUMB_HEIGHT = 16;
 
     private final SmoothScrollState scroll;
     private int x;
@@ -31,15 +28,24 @@ final class GuiFurusatoScrollBar extends Gui {
         scroll.setMaximum(Math.max(0, rowCount - visibleRows));
     }
 
-    void draw(Minecraft minecraft) {
+    void draw(Minecraft minecraft, int mouseX, int mouseY) {
         if (!visible) {
             return;
         }
-        drawRect(x, y, x + WIDTH, y + height, 0xFF8B8B8B);
-        drawRect(x + 1, y + 1, x + WIDTH - 1, y + height - 1, 0xFFB8B8B8);
+        int trackLeft = x + WIDTH / 2 - 2;
+        int trackRight = trackLeft + 4;
+        drawRect(trackLeft, y, trackRight, y + height, 0xFF202020);
+        drawRect(trackLeft + 1, y + 1, trackRight - 1, y + height - 1,
+                0xFF606060);
         int thumbY = thumbY();
-        minecraft.getTextureManager().bindTexture(CREATIVE_TABS);
-        drawTexturedModalRect(x, thumbY, 232, 0, WIDTH, THUMB_HEIGHT);
+        int filledBottom = Math.min(y + height - 1, thumbY + THUMB_HEIGHT / 2);
+        drawRect(trackLeft + 1, y + 1, trackRight - 1, filledBottom,
+                0xFF7070D8);
+        boolean hovered = mouseX >= x && mouseX < x + WIDTH
+                && mouseY >= thumbY && mouseY < thumbY + THUMB_HEIGHT;
+        drawRect(x, thumbY, x + WIDTH, thumbY + THUMB_HEIGHT, 0xFF000000);
+        drawRect(x + 1, thumbY + 1, x + WIDTH - 1, thumbY + THUMB_HEIGHT - 1,
+                hovered || dragging ? 0xFFFFFFFF : 0xFFD0D0D0);
     }
 
     boolean mousePressed(int mouseX, int mouseY) {

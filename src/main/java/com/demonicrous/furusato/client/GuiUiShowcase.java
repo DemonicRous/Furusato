@@ -107,7 +107,7 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
         int trackHeight = VISIBLE_ROWS * ROW_HEIGHT;
         scrollBar.setBounds(left + panelWidth - 16, trackTop,
                 trackHeight, SAMPLE_ROWS, VISIBLE_ROWS);
-        scrollBar.draw(mc);
+        scrollBar.draw(mc, mouseX, mouseY);
     }
 
     @Override
