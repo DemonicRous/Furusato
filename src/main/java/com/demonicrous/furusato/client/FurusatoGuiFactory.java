@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.fml.client.IModGuiFactory;
 
-/** Exposes Furusato's font settings from the Forge mod list. */
+/** Exposes Furusato's settings hub from the Forge mod list. */
 public final class FurusatoGuiFactory implements IModGuiFactory {
     @Override
     public void initialize(Minecraft minecraftInstance) {
@@ -19,7 +19,7 @@ public final class FurusatoGuiFactory implements IModGuiFactory {
 
     @Override
     public GuiScreen createConfigGui(GuiScreen parentScreen) {
-        return new GuiFontSettings(parentScreen);
+        return new GuiFurusatoConfigHub(parentScreen);
     }
 
     @Override
@@ -27,4 +27,3 @@ public final class FurusatoGuiFactory implements IModGuiFactory {
         return Collections.emptySet();
     }
 }
-

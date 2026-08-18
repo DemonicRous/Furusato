@@ -1,8 +1,12 @@
 furusato.font.title=Настройки шрифта
 furusato.font.open=Настройки шрифта
+furusato.font.open.short=Шрифт
 furusato.font.guiScale=Масштаб интерфейса: %s (фактически: %s)
 furusato.font.forceUnicode=Принудительный Unicode-шрифт: %s
 furusato.font.preserveOddScale=Сохранять нечётный Unicode-масштаб: %s
 furusato.font.preview=Предпросмотр
 furusato.font.sample=Furusato — English / Русский
 furusato.font.restartHint=После изменения Unicode-патча перезапустите Minecraft
+furusato.config.title=Настройки Furusato
+furusato.config.subtitle=Выберите категорию настроек
+furusato.config.category.font=Шрифт и масштаб интерфейса

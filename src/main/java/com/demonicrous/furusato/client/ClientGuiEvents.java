@@ -26,7 +26,7 @@ public final class ClientGuiEvents {
                         button.y,
                         98,
                         20,
-                        net.minecraft.client.resources.I18n.format("furusato.font.open")
+                        net.minecraft.client.resources.I18n.format("furusato.font.open.short")
                 ));
                 return;
             }
@@ -42,4 +42,3 @@ public final class ClientGuiEvents {
         }
     }
 }
-
