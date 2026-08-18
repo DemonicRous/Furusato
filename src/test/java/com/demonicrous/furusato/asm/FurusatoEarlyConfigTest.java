@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,6 +69,54 @@ public final class FurusatoEarlyConfigTest {
         FurusatoEarlyConfig.load(gameDirectory);
 
         assertFalse(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
+    }
+
+    @Test
+    public void atomicallySavesDiagnosticsAndPreservesUnknownProperties() throws Exception {
+        File gameDirectory = temporaryFolder.newFolder("atomic");
+        File configDirectory = new File(gameDirectory, "config");
+        assertTrue(configDirectory.mkdirs());
+        File file = new File(configDirectory, "furusato.properties");
+        try (Writer writer = new OutputStreamWriter(
+                new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            writer.write("patches.unicodeGuiScale=true\n");
+            writer.write("diagnostics.logging=false\n");
+            writer.write("future.setting=preserved\n");
+        }
+
+        FurusatoEarlyConfig.load(gameDirectory);
+        assertTrue(FurusatoEarlyConfig.setDiagnosticLoggingEnabled(true));
+
+        String saved = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+        String backup = new String(Files.readAllBytes(
+                new File(configDirectory, "furusato.properties.bak").toPath()),
+                StandardCharsets.UTF_8);
+        assertTrue(saved.contains("diagnostics.logging=true"));
+        assertTrue(saved.contains("future.setting=preserved"));
+        assertTrue(backup.contains("diagnostics.logging=false"));
+        assertFalse(new File(configDirectory, "furusato.properties.tmp").exists());
+    }
+
+    @Test
+    public void resetRestoresKnownDefaultsWithoutRemovingFutureSettings() throws Exception {
+        File gameDirectory = temporaryFolder.newFolder("reset");
+        File configDirectory = new File(gameDirectory, "config");
+        assertTrue(configDirectory.mkdirs());
+        File file = new File(configDirectory, "furusato.properties");
+        try (Writer writer = new OutputStreamWriter(
+                new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            writer.write("patches.unicodeGuiScale=false\n");
+            writer.write("diagnostics.logging=false\n");
+            writer.write("future.setting=preserved\n");
+        }
+        FurusatoEarlyConfig.load(gameDirectory);
+
+        assertTrue(FurusatoEarlyConfig.resetDefaults());
+
+        assertTrue(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
+        assertTrue(FurusatoEarlyConfig.isDiagnosticLoggingEnabled());
+        String saved = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+        assertTrue(saved.contains("future.setting=preserved"));
     }
 
     @Test

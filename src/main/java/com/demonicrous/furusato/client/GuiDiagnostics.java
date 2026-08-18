@@ -24,6 +24,9 @@ import net.minecraftforge.common.ForgeVersion;
 public final class GuiDiagnostics extends GuiScreen {
     private static final int COPY_REPORT = 10;
     private static final int EXPORT_REPORT = 11;
+    private static final int OVERVIEW_TAB = 20;
+    private static final int RENDERING_TAB = 21;
+    private static final int COMPATIBILITY_TAB = 22;
     private static final int DONE = 200;
     private static final int PANEL_PADDING = 10;
     private static final String UNICODE_PATCH = "unicode_gui_scale";
@@ -33,6 +36,7 @@ public final class GuiDiagnostics extends GuiScreen {
     private String report = "";
     private String copyLabelKey = "furusato.diagnostics.copy";
     private String exportLabelKey = "furusato.diagnostics.export";
+    private Category activeCategory = Category.OVERVIEW;
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -43,12 +47,36 @@ public final class GuiDiagnostics extends GuiScreen {
         buttonList.clear();
         refreshDiagnostics();
         int center = width / 2;
+        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        int contentLeft = (width - contentWidth) / 2;
+        int panelHeight = 4 * 14 + PANEL_PADDING * 2;
+        int groupHeight = panelHeight + 46;
+        int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
+        int tabTop = groupTop + 20;
+        int gap = 4;
+        int tabWidth = (contentWidth - gap * 2) / 3;
+        addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
+                contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
+        addCategoryButton(RENDERING_TAB, Category.RENDERING,
+                contentLeft + tabWidth + gap, tabTop, tabWidth,
+                "furusato.diagnostics.tab.rendering");
+        addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
+                contentLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
+                "furusato.diagnostics.tab.compatibility");
         addButton(new GuiButton(COPY_REPORT, center - 100, height - 51, 98, 20,
                 I18n.format(copyLabelKey)));
         addButton(new GuiButton(EXPORT_REPORT, center + 2, height - 51, 98, 20,
                 I18n.format(exportLabelKey)));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
+    }
+
+    private void addCategoryButton(int id, Category category, int x, int y,
+            int buttonWidth, String translationKey) {
+        GuiResponsiveButton button = addButton(new GuiResponsiveButton(
+                id, x, y, buttonWidth, 20, ""));
+        button.setFullText(fontRenderer, I18n.format(translationKey));
+        button.enabled = activeCategory != category;
     }
 
     private void refreshDiagnostics() {
@@ -66,32 +94,34 @@ public final class GuiDiagnostics extends GuiScreen {
         List<String> thirdParty = CompatibilityDiagnostics.thirdPartyTransformerClassNames();
         String health = healthFor(patchStatus, unicodeResources, safeMode);
 
-        addRow("furusato.diagnostics.version", Furusato.VERSION, 0xFFFFFF);
-        addRow("furusato.diagnostics.environment",
+        addRow(Category.OVERVIEW,
+                "furusato.diagnostics.version", Furusato.VERSION, 0xFFFFFF);
+        addRow(Category.OVERVIEW, "furusato.diagnostics.environment",
                 "Minecraft 1.12.2 / Forge " + ForgeVersion.getVersion(), 0xFFFFFF);
-        addRow("furusato.diagnostics.patch", localizeStatus(patchStatus),
+        addRow(Category.RENDERING,
+                "furusato.diagnostics.patch", localizeStatus(patchStatus),
                 statusColor(patchStatus));
-        addRow("furusato.diagnostics.safeMode",
+        addRow(Category.COMPATIBILITY, "furusato.diagnostics.safeMode",
                 I18n.format(safeMode ? "options.on" : "options.off"),
                 safeMode ? 0xFFAA00 : 0xAAAAAA);
-        addRow("furusato.diagnostics.unicodeFont",
+        addRow(Category.RENDERING, "furusato.diagnostics.unicodeFont",
                 I18n.format(mc.gameSettings.forceUnicodeFont ? "options.on" : "options.off"),
                 mc.gameSettings.forceUnicodeFont ? 0x55FF55 : 0xAAAAAA);
-        addRow("furusato.diagnostics.guiScale",
+        addRow(Category.RENDERING, "furusato.diagnostics.guiScale",
                 I18n.format("furusato.font.scale." + selectedScale)
                         + " [" + effectiveScale + "]", 0xFFFFFF);
-        addRow("furusato.diagnostics.resources",
+        addRow(Category.RENDERING, "furusato.diagnostics.resources",
                 I18n.format(unicodeResources
                         ? "furusato.diagnostics.available"
                         : "furusato.diagnostics.missing"),
                 unicodeResources ? 0x55FF55 : 0xFF5555);
-        addRow("furusato.diagnostics.config",
+        addRow(Category.OVERVIEW, "furusato.diagnostics.config",
                 config == null ? I18n.format("furusato.diagnostics.unavailable")
                         : configPath, config == null ? 0xFF5555 : 0xAAAAAA);
-        addRow("furusato.diagnostics.transformers",
+        addRow(Category.COMPATIBILITY, "furusato.diagnostics.transformers",
                 Integer.toString(thirdParty.size()),
                 thirdParty.isEmpty() ? 0x55FF55 : 0xFFAA00);
-        addRow("furusato.diagnostics.health", I18n.format(health),
+        addRow(Category.OVERVIEW, "furusato.diagnostics.health", I18n.format(health),
                 "furusato.diagnostics.ok".equals(health) ? 0x55FF55 : 0xFFAA00);
 
         report = buildReport(patchStatus, patch, config, selectedScale,
@@ -99,8 +129,8 @@ public final class GuiDiagnostics extends GuiScreen {
                 transformers, thirdParty);
     }
 
-    private void addRow(String labelKey, String value, int color) {
-        rows.add(new Row(I18n.format(labelKey), value, color));
+    private void addRow(Category category, String labelKey, String value, int color) {
+        rows.add(new Row(category, I18n.format(labelKey), value, color));
     }
 
     private boolean hasUnicodeResources() {
@@ -199,9 +229,20 @@ public final class GuiDiagnostics extends GuiScreen {
                 exportLabelKey = "furusato.diagnostics.exportFailed";
             }
             button.displayString = I18n.format(exportLabelKey);
+        } else if (button.id == OVERVIEW_TAB) {
+            selectCategory(Category.OVERVIEW);
+        } else if (button.id == RENDERING_TAB) {
+            selectCategory(Category.RENDERING);
+        } else if (button.id == COMPATIBILITY_TAB) {
+            selectCategory(Category.COMPATIBILITY);
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);
         }
+    }
+
+    private void selectCategory(Category category) {
+        activeCategory = category;
+        initGui();
     }
 
     private boolean exportReport() {
@@ -239,10 +280,10 @@ public final class GuiDiagnostics extends GuiScreen {
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int panelHeight = rows.size() * rowHeight + PANEL_PADDING * 2;
-        int groupHeight = panelHeight + 20;
-        int groupTop = Math.max(5, (height - 55 - groupHeight) / 2);
-        int panelTop = groupTop + 20;
+        int panelHeight = 4 * rowHeight + PANEL_PADDING * 2;
+        int groupHeight = panelHeight + 46;
+        int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
+        int panelTop = groupTop + 46;
 
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);
@@ -250,8 +291,9 @@ public final class GuiDiagnostics extends GuiScreen {
         drawTooltipStylePanel(contentLeft + 6, panelTop + 6,
                 contentWidth - 12, panelHeight - 12);
 
+        List<Row> visibleRows = visibleRows();
         int labelWidth = 0;
-        for (Row row : rows) {
+        for (Row row : visibleRows) {
             labelWidth = Math.max(labelWidth,
                     fontRenderer.getStringWidth(row.label + ":"));
         }
@@ -260,8 +302,8 @@ public final class GuiDiagnostics extends GuiScreen {
         int valueX = labelX + labelWidth + 18;
         int maxValueWidth = Math.max(60,
                 contentRight - valueX - PANEL_PADDING);
-        for (int index = 0; index < rows.size(); index++) {
-            Row row = rows.get(index);
+        for (int index = 0; index < visibleRows.size(); index++) {
+            Row row = visibleRows.get(index);
             int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
             if ((index & 1) == 1) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
@@ -278,6 +320,16 @@ public final class GuiDiagnostics extends GuiScreen {
                     valueX, textY, row.color);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private List<Row> visibleRows() {
+        List<Row> visible = new ArrayList<Row>();
+        for (Row row : rows) {
+            if (row.category == activeCategory) {
+                visible.add(row);
+            }
+        }
+        return visible;
     }
 
     /** Same background, border colors and padding as Furusato's tooltips. */
@@ -339,14 +391,22 @@ public final class GuiDiagnostics extends GuiScreen {
     }
 
     private static final class Row {
+        private final Category category;
         private final String label;
         private final String value;
         private final int color;
 
-        private Row(String label, String value, int color) {
+        private Row(Category category, String label, String value, int color) {
+            this.category = category;
             this.label = label;
             this.value = value;
             this.color = color;
         }
+    }
+
+    private enum Category {
+        OVERVIEW,
+        RENDERING,
+        COMPATIBILITY
     }
 }

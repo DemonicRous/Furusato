@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
@@ -18,8 +19,6 @@ import org.apache.logging.log4j.Logger;
 /** Configuration available before normal Forge mod initialization. */
 public final class FurusatoEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("Furusato/Config");
-    private static final String UNICODE_GUI_SCALE = "patches.unicodeGuiScale";
-    private static final String DIAGNOSTIC_LOGGING = "diagnostics.logging";
     private static final String SAFE_MODE_PROPERTY = "furusato.safeMode";
 
     private static volatile boolean unicodeGuiScaleEnabled = true;
@@ -60,15 +59,17 @@ public final class FurusatoEarlyConfig {
                 }
             }
 
-            unicodeGuiScaleEnabled = readBoolean(properties, UNICODE_GUI_SCALE, true);
-            diagnosticLoggingEnabled = readBoolean(properties, DIAGNOSTIC_LOGGING, true);
+            unicodeGuiScaleEnabled = readBoolean(properties, Option.UNICODE_GUI_SCALE);
+            diagnosticLoggingEnabled = readBoolean(properties, Option.DIAGNOSTIC_LOGGING);
             configurationFile = file;
             configuration = properties;
 
-            changed |= putDefault(properties, UNICODE_GUI_SCALE, unicodeGuiScaleEnabled);
-            changed |= putDefault(properties, DIAGNOSTIC_LOGGING, diagnosticLoggingEnabled);
+            changed |= normalize(properties, Option.UNICODE_GUI_SCALE,
+                    unicodeGuiScaleEnabled);
+            changed |= normalize(properties, Option.DIAGNOSTIC_LOGGING,
+                    diagnosticLoggingEnabled);
             if (changed) {
-                save(file, properties);
+                saveAtomic(file, properties, false);
             }
 
             LOGGER.info("Loaded early configuration from {}", file.getAbsolutePath());
@@ -87,6 +88,10 @@ public final class FurusatoEarlyConfig {
         return diagnosticLoggingEnabled;
     }
 
+    public static boolean unicodeGuiScaleRequiresRestart() {
+        return Option.UNICODE_GUI_SCALE.requiresRestart;
+    }
+
     /** Safe mode is a JVM-only switch because it must be available before config injection. */
     public static boolean isSafeModeEnabled() {
         try {
@@ -102,14 +107,49 @@ public final class FurusatoEarlyConfig {
     }
 
     public static synchronized boolean setUnicodeGuiScaleEnabled(boolean enabled) {
-        unicodeGuiScaleEnabled = enabled;
-        configuration.setProperty(UNICODE_GUI_SCALE, Boolean.toString(enabled));
+        return set(Option.UNICODE_GUI_SCALE, enabled);
+    }
+
+    public static synchronized boolean setDiagnosticLoggingEnabled(boolean enabled) {
+        return set(Option.DIAGNOSTIC_LOGGING, enabled);
+    }
+
+    public static synchronized boolean resetDefaults() {
         if (configurationFile == null) {
-            LOGGER.warn("Cannot save Unicode GUI-scale setting before configuration is loaded");
+            LOGGER.warn("Cannot reset Furusato configuration before it is loaded");
             return false;
         }
+        Properties updated = copyOf(configuration);
+        for (Option option : Option.values()) {
+            updated.setProperty(option.key, Boolean.toString(option.defaultValue));
+        }
         try {
-            save(configurationFile, configuration);
+            saveAtomic(configurationFile, updated, true);
+            configuration = updated;
+            unicodeGuiScaleEnabled = Option.UNICODE_GUI_SCALE.defaultValue;
+            diagnosticLoggingEnabled = Option.DIAGNOSTIC_LOGGING.defaultValue;
+            return true;
+        } catch (IOException error) {
+            LOGGER.error("Could not reset {}", configurationFile, error);
+            return false;
+        }
+    }
+
+    private static boolean set(Option option, boolean enabled) {
+        if (configurationFile == null) {
+            LOGGER.warn("Cannot save {} before configuration is loaded", option.key);
+            return false;
+        }
+        Properties updated = copyOf(configuration);
+        updated.setProperty(option.key, Boolean.toString(enabled));
+        try {
+            saveAtomic(configurationFile, updated, true);
+            configuration = updated;
+            if (option == Option.UNICODE_GUI_SCALE) {
+                unicodeGuiScaleEnabled = enabled;
+            } else if (option == Option.DIAGNOSTIC_LOGGING) {
+                diagnosticLoggingEnabled = enabled;
+            }
             return true;
         } catch (IOException error) {
             LOGGER.error("Could not save {}", configurationFile, error);
@@ -117,10 +157,10 @@ public final class FurusatoEarlyConfig {
         }
     }
 
-    private static boolean readBoolean(Properties properties, String key, boolean fallback) {
-        String value = properties.getProperty(key);
+    private static boolean readBoolean(Properties properties, Option option) {
+        String value = properties.getProperty(option.key);
         if (value == null) {
-            return fallback;
+            return option.defaultValue;
         }
         if ("true".equalsIgnoreCase(value)) {
             return true;
@@ -128,26 +168,54 @@ public final class FurusatoEarlyConfig {
         if ("false".equalsIgnoreCase(value)) {
             return false;
         }
-        LOGGER.warn("Invalid boolean value for {}: {}; using {}", key, value, fallback);
-        return fallback;
+        LOGGER.warn("Invalid boolean value for {}: {}; using {}",
+                option.key, value, option.defaultValue);
+        return option.defaultValue;
     }
 
-    private static boolean putDefault(Properties properties, String key, boolean value) {
-        if (properties.containsKey(key)) {
+    private static boolean normalize(Properties properties, Option option, boolean value) {
+        String normalized = Boolean.toString(value);
+        if (normalized.equalsIgnoreCase(properties.getProperty(option.key))) {
             return false;
         }
-        properties.setProperty(key, Boolean.toString(value));
+        properties.setProperty(option.key, normalized);
         return true;
     }
 
-    private static void save(File file, Properties properties) throws IOException {
+    private static Properties copyOf(Properties source) {
+        Properties copy = new Properties();
+        copy.putAll(source);
+        return copy;
+    }
+
+    private static void saveAtomic(File file, Properties properties, boolean backup)
+            throws IOException {
         File parent = file.getParentFile();
         if (!parent.isDirectory() && !parent.mkdirs()) {
             throw new IOException("Could not create configuration directory: " + parent);
         }
-        try (Writer writer = new OutputStreamWriter(
-                new FileOutputStream(file), StandardCharsets.UTF_8)) {
-            properties.store(writer, "Furusato early configuration");
+        File temporary = new File(parent, file.getName() + ".tmp");
+        try {
+            try (Writer writer = new OutputStreamWriter(
+                    new FileOutputStream(temporary), StandardCharsets.UTF_8)) {
+                properties.store(writer, "Furusato early configuration");
+            }
+            if (backup && file.isFile()) {
+                Files.copy(file.toPath(),
+                        new File(parent, file.getName() + ".bak").toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.COPY_ATTRIBUTES);
+            }
+            try {
+                Files.move(temporary.toPath(), file.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporary.toPath(), file.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporary.toPath());
         }
     }
 
@@ -160,5 +228,20 @@ public final class FurusatoEarlyConfig {
         diagnosticLoggingEnabled = true;
         configurationFile = null;
         configuration = new Properties();
+    }
+
+    private enum Option {
+        UNICODE_GUI_SCALE("patches.unicodeGuiScale", true, true),
+        DIAGNOSTIC_LOGGING("diagnostics.logging", true, false);
+
+        private final String key;
+        private final boolean defaultValue;
+        private final boolean requiresRestart;
+
+        Option(String key, boolean defaultValue, boolean requiresRestart) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+            this.requiresRestart = requiresRestart;
+        }
     }
 }
