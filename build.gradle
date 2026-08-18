@@ -1,0 +1,84 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.minecraftforge.net/' }
+        maven { url = 'https://github.com/juanmuscaria/maven/raw/master' }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle2:2.3-SNAPSHOT'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+version = mod_version
+group = mod_group
+archivesBaseName = mod_archives_name
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+compileJava.options.encoding = 'UTF-8'
+
+minecraft {
+    version = "${mc_version}-${forge_version}"
+    mappings = 'stable_39'
+    runDir = 'run'
+
+    replace '@VERSION@', project.version
+    replaceIn 'LimeCore.java'
+}
+
+runClient {
+    jvmArgs '-Dfml.coreMods.load=com.demonicrous.limecore.asm.LimeCorePlugin'
+}
+
+dependencies {
+    testCompile 'junit:junit:4.13.2'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', mc_version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand(
+            mod_id: mod_id,
+            mod_name: mod_name,
+            mod_description: mod_description,
+            mod_version: project.version,
+            mc_version: mc_version,
+            mod_author: mod_author
+        )
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            'Specification-Title': mod_name,
+            'Specification-Vendor': mod_author,
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': mod_author,
+            'FMLCorePlugin': 'com.demonicrous.limecore.asm.LimeCorePlugin',
+            'FMLCorePluginContainsFMLMod': 'true'
+        )
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
