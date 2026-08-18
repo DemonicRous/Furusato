@@ -12,12 +12,15 @@ public final class FurusatoPlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
         PatchDiagnostics.register("unicode_gui_scale");
+        PatchDiagnostics.register("animated_hotbar_selector");
         if (FurusatoEarlyConfig.isSafeModeEnabled()) {
             PatchDiagnostics.safeMode("unicode_gui_scale");
+            PatchDiagnostics.safeMode("animated_hotbar_selector");
             return new String[0];
         }
         return new String[] {
-                UnicodeGuiScaleTransformer.class.getName()
+                UnicodeGuiScaleTransformer.class.getName(),
+                HotbarSelectorTransformer.class.getName()
         };
     }
 
