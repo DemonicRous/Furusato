@@ -59,7 +59,7 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         boolean compact = isCompactLayout();
         int contentWidth = responsiveContentWidth(280, compact ? 380 : 500, 12);
         int contentLeft = (width - contentWidth) / 2;
-        int headerHeight = compact ? 82 : 58;
+        int headerHeight = compact ? 78 : 54;
         int panelHeight = panelHeight(headerHeight);
         int groupHeight = panelHeight + headerHeight;
         int footerHeight = 52;
@@ -381,7 +381,7 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int headerHeight = compact ? 82 : 58;
+        int headerHeight = compact ? 78 : 54;
         int panelHeight = panelHeight(headerHeight);
         int groupHeight = panelHeight + headerHeight;
         int footerHeight = 52;
@@ -489,7 +489,7 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
         if (wheel != 0) {
-            int headerHeight = isCompactLayout() ? 82 : 58;
+            int headerHeight = isCompactLayout() ? 78 : 54;
             int capacity = FurusatoGuiLayout.visibleRows(
                     panelHeight(headerHeight), PANEL_PADDING, 14);
             scroll.setMaximum(Math.max(0, visibleRows().size() - capacity));
