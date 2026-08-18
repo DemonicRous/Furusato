@@ -46,7 +46,16 @@ final class GuiFurusatoToggle extends GuiButton {
                 handleCenter + 5, trackTop + 11, 0xFF000000);
         drawRect(handleCenter - 3, trackTop - 4,
                 handleCenter + 4, trackTop + 10, handleColor);
-        minecraft.fontRenderer.drawStringWithShadow(displayString,
+        String label = displayString;
+        int labelWidth = Math.max(0, trackLeft - x - 8);
+        if (minecraft.fontRenderer.getStringWidth(label) > labelWidth) {
+            String ellipsis = "...";
+            label = minecraft.fontRenderer.trimStringToWidth(label,
+                    Math.max(0, labelWidth
+                            - minecraft.fontRenderer.getStringWidth(ellipsis)))
+                    + ellipsis;
+        }
+        minecraft.fontRenderer.drawStringWithShadow(label,
                 x + 2, y + 6, enabled ? 0xFFFFFF : 0xA0A0A0);
     }
 }

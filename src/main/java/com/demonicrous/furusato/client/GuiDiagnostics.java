@@ -173,6 +173,22 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
                         ? "furusato.diagnostics.available"
                         : "furusato.diagnostics.missing"),
                 unicodeResources ? 0x55FF55 : 0xFF5555);
+        addRow(Category.RENDERING, "furusato.diagnostics.hotbarAnimation",
+                I18n.format(FurusatoEarlyConfig.isHotbarAnimationEnabled()
+                        ? "options.on" : "options.off"),
+                FurusatoEarlyConfig.isHotbarAnimationEnabled() ? 0x55FF55 : 0xAAAAAA);
+        addRow(Category.RENDERING, "furusato.diagnostics.containerAnimation",
+                I18n.format(FurusatoEarlyConfig.isContainerAnimationEnabled()
+                        ? "options.on" : "options.off"),
+                FurusatoEarlyConfig.isContainerAnimationEnabled() ? 0x55FF55 : 0xAAAAAA);
+        addRow(Category.RENDERING, "furusato.diagnostics.containerBlur",
+                I18n.format("furusato.effects.blurStatus."
+                        + GuiBackgroundBlur.getStatus()),
+                "conflict".equals(GuiBackgroundBlur.getStatus())
+                        || "failed".equals(GuiBackgroundBlur.getStatus())
+                        ? 0xFFAA00 : 0x55FF55);
+        addRow(Category.RENDERING, "furusato.diagnostics.blurRadius",
+                Integer.toString(FurusatoEarlyConfig.getBlurRadius()), 0xFFFFFF);
         addRow(Category.OVERVIEW, "furusato.diagnostics.config",
                 config == null ? I18n.format("furusato.diagnostics.unavailable")
                         : configPath, config == null ? 0xFF5555 : 0xAAAAAA);

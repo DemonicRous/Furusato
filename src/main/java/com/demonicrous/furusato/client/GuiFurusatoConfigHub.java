@@ -15,6 +15,7 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
     private static final int FONT_SETTINGS = 10;
     private static final int DIAGNOSTICS = 11;
     private static final int UI_SHOWCASE = 12;
+    private static final int EFFECTS_SETTINGS = 13;
     private static final int DONE = 200;
 
     private final GuiScreen parentScreen;
@@ -22,6 +23,7 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
     private GuiResponsiveButton fontSettingsButton;
     private GuiResponsiveButton diagnosticsButton;
     private GuiResponsiveButton uiShowcaseButton;
+    private GuiResponsiveButton effectsSettingsButton;
 
     public GuiFurusatoConfigHub(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -32,17 +34,21 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
         buttonList.clear();
         int center = width / 2;
         generalSettingsButton = addButton(new GuiResponsiveButton(
-                GENERAL_SETTINGS, center - 100, height / 2 - 55, 200, 20, ""));
+                GENERAL_SETTINGS, center - 100, height / 2 - 70, 200, 20, ""));
         generalSettingsButton.setFullText(
                 fontRenderer, I18n.format("furusato.config.category.general"));
         fontSettingsButton = addButton(new GuiResponsiveButton(
-                FONT_SETTINGS, center - 100, height / 2 - 25, 200, 20, ""));
+                FONT_SETTINGS, center - 100, height / 2 - 40, 200, 20, ""));
         fontSettingsButton.setFullText(
                 fontRenderer, I18n.format(FurusatoEarlyConfig.isRestartPending()
                         ? "furusato.config.category.font.restart"
                         : "furusato.config.category.font"));
+        effectsSettingsButton = addButton(new GuiResponsiveButton(
+                EFFECTS_SETTINGS, center - 100, height / 2 - 10, 200, 20, ""));
+        effectsSettingsButton.setFullText(
+                fontRenderer, I18n.format("furusato.config.category.effects"));
         diagnosticsButton = addButton(new GuiResponsiveButton(
-                DIAGNOSTICS, center - 100, height / 2 + 5, 200, 20, ""));
+                DIAGNOSTICS, center - 100, height / 2 + 20, 200, 20, ""));
         boolean warning = FurusatoEarlyConfig.isSafeModeEnabled()
                 || PatchDiagnostics.hasWarnings();
         diagnosticsButton.setFullText(
@@ -50,7 +56,7 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
                         ? "furusato.config.category.diagnostics.warning"
                         : "furusato.config.category.diagnostics"));
         uiShowcaseButton = addButton(new GuiResponsiveButton(
-                UI_SHOWCASE, center - 100, height / 2 + 35, 200, 20, ""));
+                UI_SHOWCASE, center - 100, height / 2 + 50, 200, 20, ""));
         uiShowcaseButton.setFullText(
                 fontRenderer, I18n.format("furusato.config.category.ui"));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
@@ -66,6 +72,8 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
             mc.displayGuiScreen(new GuiGeneralSettings(this));
         } else if (button.id == FONT_SETTINGS) {
             mc.displayGuiScreen(new GuiFontSettings(this));
+        } else if (button.id == EFFECTS_SETTINGS) {
+            mc.displayGuiScreen(new GuiEffectsSettings(this));
         } else if (button.id == DIAGNOSTICS) {
             mc.displayGuiScreen(new GuiDiagnostics(this));
         } else if (button.id == UI_SHOWCASE) {
@@ -84,6 +92,7 @@ public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
         super.drawScreen(mouseX, mouseY, partialTicks);
         drawButtonTooltip(generalSettingsButton, mouseX, mouseY);
         drawButtonTooltip(fontSettingsButton, mouseX, mouseY);
+        drawButtonTooltip(effectsSettingsButton, mouseX, mouseY);
         drawButtonTooltip(diagnosticsButton, mouseX, mouseY);
         drawButtonTooltip(uiShowcaseButton, mouseX, mouseY);
     }

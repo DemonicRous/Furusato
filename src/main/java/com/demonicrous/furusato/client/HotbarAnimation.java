@@ -1,5 +1,6 @@
 package com.demonicrous.furusato.client;
 
+import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
@@ -10,7 +11,6 @@ public final class HotbarAnimation {
     private static final ResourceLocation WIDGETS =
             new ResourceLocation("textures/gui/widgets.png");
     private static final Gui DRAWER = new Gui();
-    private static final long BASE_DURATION_NANOS = 90000000L;
     private static final long EXTRA_SLOT_DURATION_NANOS = 20000000L;
     private static final long PULSE_DURATION_NANOS = 120000000L;
     private static final long STALE_STATE_NANOS = 500000000L;
@@ -31,6 +31,14 @@ public final class HotbarAnimation {
     }
 
     public static int adjustSelectorX(int targetX) {
+        if (!FurusatoEarlyConfig.isHotbarAnimationEnabled()) {
+            displayedX = targetX;
+            HotbarAnimation.targetX = targetX;
+            transitionStartedNanos = 0L;
+            pulseStartedNanos = 0L;
+            lastFrameNanos = System.nanoTime();
+            return targetX;
+        }
         long now = System.nanoTime();
         if (Double.isNaN(displayedX) || lastFrameNanos == 0L
                 || now - lastFrameNanos > STALE_STATE_NANOS) {
@@ -51,7 +59,8 @@ public final class HotbarAnimation {
             } else {
                 startX = displayedX;
                 transitionStartedNanos = now;
-                transitionDurationNanos = BASE_DURATION_NANOS
+                transitionDurationNanos = FurusatoEarlyConfig
+                        .getHotbarDurationMillis() * 1000000L
                         + (distance - 1L) * EXTRA_SLOT_DURATION_NANOS;
             }
         }
@@ -108,7 +117,8 @@ public final class HotbarAnimation {
     }
 
     private static float pulseScale(long now) {
-        if (pulseStartedNanos == 0L) {
+        if (!FurusatoEarlyConfig.isHotbarPulseEnabled()
+                || pulseStartedNanos == 0L) {
             return 1.0F;
         }
         double progress = Math.min(1.0D, Math.max(0.0D,
