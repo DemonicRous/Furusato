@@ -1,6 +1,12 @@
 # Furusato
 
-Базовый CoreMod семейства Furusato для Minecraft Forge 1.12.2.
+**Furusato** — клиентский CoreMod для Minecraft Forge 1.12.2, который переносит
+в старую версию современные настройки шрифта, масштабирования интерфейса и
+доступности.
+
+- Название мода: `Furusato`
+- Mod ID: `furusato`
+- Автор: `DemonicRous`
 
 ## Требования
 
