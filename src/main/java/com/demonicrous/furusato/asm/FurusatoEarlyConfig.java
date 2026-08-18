@@ -86,6 +86,10 @@ public final class FurusatoEarlyConfig {
         return diagnosticLoggingEnabled;
     }
 
+    public static synchronized File getConfigurationFile() {
+        return configurationFile;
+    }
+
     public static synchronized boolean setUnicodeGuiScaleEnabled(boolean enabled) {
         unicodeGuiScaleEnabled = enabled;
         configuration.setProperty(UNICODE_GUI_SCALE, Boolean.toString(enabled));

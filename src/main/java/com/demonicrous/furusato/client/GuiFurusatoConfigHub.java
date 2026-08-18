@@ -10,10 +10,12 @@ import net.minecraft.client.resources.I18n;
 /** Entry point for Furusato settings categories. */
 public final class GuiFurusatoConfigHub extends GuiScreen {
     private static final int FONT_SETTINGS = 10;
+    private static final int DIAGNOSTICS = 11;
     private static final int DONE = 200;
 
     private final GuiScreen parentScreen;
     private GuiResponsiveButton fontSettingsButton;
+    private GuiResponsiveButton diagnosticsButton;
 
     public GuiFurusatoConfigHub(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -24,9 +26,13 @@ public final class GuiFurusatoConfigHub extends GuiScreen {
         buttonList.clear();
         int center = width / 2;
         fontSettingsButton = addButton(new GuiResponsiveButton(
-                FONT_SETTINGS, center - 100, height / 2 - 10, 200, 20, ""));
+                FONT_SETTINGS, center - 100, height / 2 - 25, 200, 20, ""));
         fontSettingsButton.setFullText(
                 fontRenderer, I18n.format("furusato.config.category.font"));
+        diagnosticsButton = addButton(new GuiResponsiveButton(
+                DIAGNOSTICS, center - 100, height / 2 + 5, 200, 20, ""));
+        diagnosticsButton.setFullText(
+                fontRenderer, I18n.format("furusato.config.category.diagnostics"));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
     }
@@ -38,6 +44,8 @@ public final class GuiFurusatoConfigHub extends GuiScreen {
         }
         if (button.id == FONT_SETTINGS) {
             mc.displayGuiScreen(new GuiFontSettings(this));
+        } else if (button.id == DIAGNOSTICS) {
+            mc.displayGuiScreen(new GuiDiagnostics(this));
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);
         }
@@ -51,6 +59,7 @@ public final class GuiFurusatoConfigHub extends GuiScreen {
         drawCenteredLines(I18n.format("furusato.config.subtitle"), 48, 0xA0A0A0);
         super.drawScreen(mouseX, mouseY, partialTicks);
         drawButtonTooltip(fontSettingsButton, mouseX, mouseY);
+        drawButtonTooltip(diagnosticsButton, mouseX, mouseY);
     }
 
     private void drawCenteredLines(String text, int top, int color) {
