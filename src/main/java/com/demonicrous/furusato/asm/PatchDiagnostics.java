@@ -36,6 +36,11 @@ public final class PatchDiagnostics {
                 + ": " + String.valueOf(error.getMessage()));
     }
 
+    /** Returns an immutable-in-practice copy safe for client GUI inspection. */
+    public static synchronized Map<String, Result> snapshot() {
+        return new LinkedHashMap<String, Result>(RESULTS);
+    }
+
     private static void update(String patch, String status, String detail) {
         RESULTS.put(patch, new Result(status, detail));
         if (!FurusatoEarlyConfig.isDiagnosticLoggingEnabled()) {
@@ -44,7 +49,7 @@ public final class PatchDiagnostics {
         LOGGER.info("{}: {} ({})", patch, status, detail);
     }
 
-    private static final class Result {
+    public static final class Result {
         private final String status;
         private final String detail;
 
@@ -52,5 +57,17 @@ public final class PatchDiagnostics {
             this.status = status;
             this.detail = detail;
         }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getDetail() {
+            return detail;
+        }
+    }
+
+    static synchronized void resetForTests() {
+        RESULTS.clear();
     }
 }
