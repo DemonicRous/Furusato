@@ -10,7 +10,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 
 /** Entry point for Furusato settings categories. */
-public final class GuiFurusatoConfigHub extends GuiScreen {
+public final class GuiFurusatoConfigHub extends GuiFurusatoScreen {
     private static final int GENERAL_SETTINGS = 9;
     private static final int FONT_SETTINGS = 10;
     private static final int DIAGNOSTICS = 11;

@@ -22,9 +22,10 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.ForgeVersion;
+import org.lwjgl.input.Mouse;
 
 /** Read-only runtime diagnostics and a copyable support report. */
-public final class GuiDiagnostics extends GuiScreen {
+public final class GuiDiagnostics extends GuiFurusatoScreen {
     private static final int COPY_REPORT = 10;
     private static final int EXPORT_REPORT = 11;
     private static final int OPEN_REPORTS = 12;
@@ -43,6 +44,7 @@ public final class GuiDiagnostics extends GuiScreen {
     private String exportLabelKey = "furusato.diagnostics.export";
     private String openLabelKey = "furusato.diagnostics.openFolder";
     private Category activeCategory = Category.OVERVIEW;
+    private int scrollOffset;
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -53,9 +55,9 @@ public final class GuiDiagnostics extends GuiScreen {
         buttonList.clear();
         refreshDiagnostics();
         int center = width / 2;
-        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        int contentWidth = responsiveContentWidth(280, 620, 16);
         int contentLeft = (width - contentWidth) / 2;
-        int panelHeight = visibleRowCapacity() * 14 + PANEL_PADDING * 2;
+        int panelHeight = panelHeight();
         int groupHeight = panelHeight + 46;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
         int tabTop = groupTop + 20;
@@ -285,6 +287,7 @@ public final class GuiDiagnostics extends GuiScreen {
 
     private void selectCategory(Category category) {
         activeCategory = category;
+        scrollOffset = 0;
         initGui();
     }
 
@@ -342,11 +345,11 @@ public final class GuiDiagnostics extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        int contentWidth = responsiveContentWidth(280, 620, 16);
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int panelHeight = visibleRowCapacity() * rowHeight + PANEL_PADDING * 2;
+        int panelHeight = panelHeight();
         int groupHeight = panelHeight + 46;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
         int panelTop = groupTop + 46;
@@ -354,12 +357,18 @@ public final class GuiDiagnostics extends GuiScreen {
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);
 
-        drawTooltipStylePanel(contentLeft + 6, panelTop + 6,
+        drawFurusatoPanel(contentLeft + 6, panelTop + 6,
                 contentWidth - 12, panelHeight - 12);
 
         List<Row> visibleRows = visibleRows();
+        int capacity = FurusatoGuiLayout.visibleRows(
+                panelHeight, PANEL_PADDING, rowHeight);
+        scrollOffset = FurusatoGuiLayout.clampScroll(
+                scrollOffset, visibleRows.size(), capacity);
+        int lastRow = Math.min(visibleRows.size(), scrollOffset + capacity);
+        List<Row> displayedRows = visibleRows.subList(scrollOffset, lastRow);
         int labelWidth = 0;
-        for (Row row : visibleRows) {
+        for (Row row : displayedRows) {
             labelWidth = Math.max(labelWidth,
                     fontRenderer.getStringWidth(row.label + ":"));
         }
@@ -369,8 +378,8 @@ public final class GuiDiagnostics extends GuiScreen {
         int maxValueWidth = Math.max(60,
                 contentRight - valueX - PANEL_PADDING);
         Row hoveredRow = null;
-        for (int index = 0; index < visibleRows.size(); index++) {
-            Row row = visibleRows.get(index);
+        for (int index = 0; index < displayedRows.size(); index++) {
+            Row row = displayedRows.get(index);
             int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
             if ((index & 1) == 1) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
@@ -387,6 +396,8 @@ public final class GuiDiagnostics extends GuiScreen {
             drawString(fontRenderer, fitText(row.value, maxValueWidth),
                     valueX, textY, row.color);
         }
+        drawScrollBar(contentRight, panelTop, panelHeight,
+                visibleRows.size(), capacity);
         super.drawScreen(mouseX, mouseY, partialTicks);
         if (hoveredRow != null
                 && fontRenderer.getStringWidth(hoveredRow.value) > maxValueWidth) {
@@ -396,8 +407,40 @@ public final class GuiDiagnostics extends GuiScreen {
         }
     }
 
-    private int visibleRowCapacity() {
-        return Math.max(4, visibleRows().size());
+    private int panelHeight() {
+        int desired = Math.max(4, visibleRows().size()) * 14 + PANEL_PADDING * 2;
+        int footerTop = height - 51;
+        int available = Math.max(34, footerTop - 54 - 8);
+        return Math.min(desired, available);
+    }
+
+    private void drawScrollBar(int contentRight, int panelTop, int panelHeight,
+            int rowCount, int capacity) {
+        if (rowCount <= capacity) {
+            return;
+        }
+        int trackTop = panelTop + PANEL_PADDING;
+        int trackBottom = panelTop + panelHeight - PANEL_PADDING;
+        int trackHeight = trackBottom - trackTop;
+        int thumbHeight = Math.max(8, trackHeight * capacity / rowCount);
+        int maxOffset = rowCount - capacity;
+        int thumbTop = trackTop + (trackHeight - thumbHeight) * scrollOffset / maxOffset;
+        drawRect(contentRight - 5, trackTop, contentRight - 3, trackBottom, 0x44000000);
+        drawRect(contentRight - 5, thumbTop, contentRight - 3,
+                thumbTop + thumbHeight, 0xFFAAAAAA);
+    }
+
+    @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int wheel = Mouse.getEventDWheel();
+        if (wheel != 0) {
+            scrollOffset += wheel < 0 ? 1 : -1;
+            int capacity = FurusatoGuiLayout.visibleRows(
+                    panelHeight(), PANEL_PADDING, 14);
+            scrollOffset = FurusatoGuiLayout.clampScroll(
+                    scrollOffset, visibleRows().size(), capacity);
+        }
     }
 
     private List<Row> visibleRows() {
@@ -408,41 +451,6 @@ public final class GuiDiagnostics extends GuiScreen {
             }
         }
         return visible;
-    }
-
-    /** Same background, border colors and padding as Furusato's tooltips. */
-    private void drawTooltipStylePanel(
-            int left, int top, int panelWidth, int panelHeight) {
-        int background = 0xF0100010;
-        int borderTop = 0x505000FF;
-        int borderBottom = (borderTop & 0xFEFEFE) >> 1
-                | borderTop & 0xFF000000;
-        int right = left + panelWidth;
-        int bottom = top + panelHeight;
-        int padding = 2;
-        int boxLeft = left - 4 - padding;
-        int boxTop = top - 4 - padding;
-        int boxRight = right + 4 + padding;
-        int boxBottom = bottom + 4 + padding;
-
-        drawGradientRect(boxLeft + 1, boxTop, boxRight - 1, boxTop + 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxBottom - 1, boxRight - 1, boxBottom,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft, boxTop + 1, boxLeft + 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxRight - 1, boxTop + 1, boxRight, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 2, boxLeft + 2, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxRight - 2, boxTop + 2, boxRight - 1, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxTop + 2,
-                borderTop, borderTop);
-        drawGradientRect(boxLeft + 1, boxBottom - 2, boxRight - 1, boxBottom - 1,
-                borderBottom, borderBottom);
     }
 
     private String fitText(String text, int maxWidth) {
