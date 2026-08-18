@@ -1,5 +1,6 @@
 package com.demonicrous.limecore;
 
+import com.demonicrous.limecore.asm.PatchDiagnostics;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +28,6 @@ public final class LimeCore {
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
         logger.info("Lime Core {} initialized", VERSION);
+        PatchDiagnostics.logSummary();
     }
 }
-

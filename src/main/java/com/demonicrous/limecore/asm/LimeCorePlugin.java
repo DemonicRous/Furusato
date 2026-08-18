@@ -1,5 +1,6 @@
 package com.demonicrous.limecore.asm;
 
+import java.io.File;
 import java.util.Map;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 
@@ -10,6 +11,7 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 public final class LimeCorePlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
+        PatchDiagnostics.register("unicode_gui_scale");
         return new String[] {
                 UnicodeGuiScaleTransformer.class.getName()
         };
@@ -27,6 +29,8 @@ public final class LimeCorePlugin implements IFMLLoadingPlugin {
 
     @Override
     public void injectData(Map<String, Object> data) {
+        Object gameDirectory = data.get("mcLocation");
+        LimeCoreEarlyConfig.load(gameDirectory instanceof File ? (File) gameDirectory : null);
     }
 
     @Override
