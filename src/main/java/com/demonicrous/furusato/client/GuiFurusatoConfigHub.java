@@ -1,5 +1,7 @@
 package com.demonicrous.furusato.client;
 
+import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
+import com.demonicrous.furusato.asm.PatchDiagnostics;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -31,8 +33,12 @@ public final class GuiFurusatoConfigHub extends GuiScreen {
                 fontRenderer, I18n.format("furusato.config.category.font"));
         diagnosticsButton = addButton(new GuiResponsiveButton(
                 DIAGNOSTICS, center - 100, height / 2 + 5, 200, 20, ""));
+        boolean warning = FurusatoEarlyConfig.isSafeModeEnabled()
+                || PatchDiagnostics.hasWarnings();
         diagnosticsButton.setFullText(
-                fontRenderer, I18n.format("furusato.config.category.diagnostics"));
+                fontRenderer, I18n.format(warning
+                        ? "furusato.config.category.diagnostics.warning"
+                        : "furusato.config.category.diagnostics"));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
     }

@@ -20,6 +20,7 @@ public final class FurusatoEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("Furusato/Config");
     private static final String UNICODE_GUI_SCALE = "patches.unicodeGuiScale";
     private static final String DIAGNOSTIC_LOGGING = "diagnostics.logging";
+    private static final String SAFE_MODE_PROPERTY = "furusato.safeMode";
 
     private static volatile boolean unicodeGuiScaleEnabled = true;
     private static volatile boolean diagnosticLoggingEnabled = true;
@@ -84,6 +85,16 @@ public final class FurusatoEarlyConfig {
 
     public static boolean isDiagnosticLoggingEnabled() {
         return diagnosticLoggingEnabled;
+    }
+
+    /** Safe mode is a JVM-only switch because it must be available before config injection. */
+    public static boolean isSafeModeEnabled() {
+        try {
+            return Boolean.parseBoolean(System.getProperty(SAFE_MODE_PROPERTY, "false"));
+        } catch (SecurityException error) {
+            LOGGER.warn("Cannot read -D{}; safe mode remains disabled", SAFE_MODE_PROPERTY);
+            return false;
+        }
     }
 
     public static synchronized File getConfigurationFile() {

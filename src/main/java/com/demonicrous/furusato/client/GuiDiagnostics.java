@@ -1,10 +1,15 @@
 package com.demonicrous.furusato.client;
 
 import com.demonicrous.furusato.Furusato;
+import com.demonicrous.furusato.asm.CompatibilityDiagnostics;
 import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import com.demonicrous.furusato.asm.PatchDiagnostics;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +23,7 @@ import net.minecraftforge.common.ForgeVersion;
 /** Read-only runtime diagnostics and a copyable support report. */
 public final class GuiDiagnostics extends GuiScreen {
     private static final int COPY_REPORT = 10;
+    private static final int EXPORT_REPORT = 11;
     private static final int DONE = 200;
     private static final int PANEL_PADDING = 10;
     private static final String UNICODE_PATCH = "unicode_gui_scale";
@@ -26,6 +32,7 @@ public final class GuiDiagnostics extends GuiScreen {
     private final List<Row> rows = new ArrayList<Row>();
     private String report = "";
     private String copyLabelKey = "furusato.diagnostics.copy";
+    private String exportLabelKey = "furusato.diagnostics.export";
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -36,8 +43,10 @@ public final class GuiDiagnostics extends GuiScreen {
         buttonList.clear();
         refreshDiagnostics();
         int center = width / 2;
-        addButton(new GuiButton(COPY_REPORT, center - 100, height - 51, 200, 20,
+        addButton(new GuiButton(COPY_REPORT, center - 100, height - 51, 98, 20,
                 I18n.format(copyLabelKey)));
+        addButton(new GuiButton(EXPORT_REPORT, center + 2, height - 51, 98, 20,
+                I18n.format(exportLabelKey)));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
     }
@@ -52,13 +61,19 @@ public final class GuiDiagnostics extends GuiScreen {
         int selectedScale = GuiScalePolicy.normalize(mc.gameSettings.guiScale);
         int effectiveScale = new ScaledResolution(mc).getScaleFactor();
         boolean unicodeResources = hasUnicodeResources();
-        String health = healthFor(patchStatus, unicodeResources);
+        boolean safeMode = FurusatoEarlyConfig.isSafeModeEnabled();
+        List<String> transformers = CompatibilityDiagnostics.transformerClassNames();
+        List<String> thirdParty = CompatibilityDiagnostics.thirdPartyTransformerClassNames();
+        String health = healthFor(patchStatus, unicodeResources, safeMode);
 
         addRow("furusato.diagnostics.version", Furusato.VERSION, 0xFFFFFF);
         addRow("furusato.diagnostics.environment",
                 "Minecraft 1.12.2 / Forge " + ForgeVersion.getVersion(), 0xFFFFFF);
         addRow("furusato.diagnostics.patch", localizeStatus(patchStatus),
                 statusColor(patchStatus));
+        addRow("furusato.diagnostics.safeMode",
+                I18n.format(safeMode ? "options.on" : "options.off"),
+                safeMode ? 0xFFAA00 : 0xAAAAAA);
         addRow("furusato.diagnostics.unicodeFont",
                 I18n.format(mc.gameSettings.forceUnicodeFont ? "options.on" : "options.off"),
                 mc.gameSettings.forceUnicodeFont ? 0x55FF55 : 0xAAAAAA);
@@ -73,11 +88,15 @@ public final class GuiDiagnostics extends GuiScreen {
         addRow("furusato.diagnostics.config",
                 config == null ? I18n.format("furusato.diagnostics.unavailable")
                         : configPath, config == null ? 0xFF5555 : 0xAAAAAA);
+        addRow("furusato.diagnostics.transformers",
+                Integer.toString(thirdParty.size()),
+                thirdParty.isEmpty() ? 0x55FF55 : 0xFFAA00);
         addRow("furusato.diagnostics.health", I18n.format(health),
                 "furusato.diagnostics.ok".equals(health) ? 0x55FF55 : 0xFFAA00);
 
         report = buildReport(patchStatus, patch, config, selectedScale,
-                effectiveScale, unicodeResources, health, configPath);
+                effectiveScale, unicodeResources, safeMode, health, configPath,
+                transformers, thirdParty);
     }
 
     private void addRow(String labelKey, String value, int color) {
@@ -96,9 +115,11 @@ public final class GuiDiagnostics extends GuiScreen {
         }
     }
 
-    private String healthFor(String patchStatus, boolean resourcesAvailable) {
+    private String healthFor(String patchStatus, boolean resourcesAvailable,
+            boolean safeMode) {
         if (!resourcesAvailable || "FAILED".equals(patchStatus)
-                || "SKIPPED".equals(patchStatus) || "UNKNOWN".equals(patchStatus)) {
+                || "SKIPPED".equals(patchStatus) || "UNKNOWN".equals(patchStatus)
+                || safeMode) {
             return "furusato.diagnostics.warning";
         }
         return "furusato.diagnostics.ok";
@@ -124,16 +145,34 @@ public final class GuiDiagnostics extends GuiScreen {
 
     private String buildReport(String patchStatus, PatchDiagnostics.Result patch,
             File config, int selectedScale, int effectiveScale,
-            boolean unicodeResources, String healthKey, String configPath) {
+            boolean unicodeResources, boolean safeMode, String healthKey,
+            String configPath, List<String> transformers, List<String> thirdParty) {
         String detail = patch == null ? "unavailable" : patch.getDetail();
         return "Furusato " + Furusato.VERSION + "\n"
                 + "Minecraft 1.12.2 / Forge " + ForgeVersion.getVersion() + "\n"
                 + "unicode_gui_scale: " + patchStatus + " (" + detail + ")\n"
+                + "safeMode: " + safeMode + "\n"
                 + "forceUnicodeFont: " + mc.gameSettings.forceUnicodeFont + "\n"
                 + "guiScale: " + selectedScale + " (effective: " + effectiveScale + ")\n"
                 + "unicodeResources: " + unicodeResources + "\n"
                 + "config: " + (config == null ? "unavailable" : configPath) + "\n"
+                + "transformers: " + join(transformers) + "\n"
+                + "thirdPartyTransformers: " + join(thirdParty) + "\n"
                 + "health: " + I18n.format(healthKey);
+    }
+
+    private String join(List<String> values) {
+        if (values.isEmpty()) {
+            return "none";
+        }
+        StringBuilder joined = new StringBuilder();
+        for (String value : values) {
+            if (joined.length() > 0) {
+                joined.append(", ");
+            }
+            joined.append(value);
+        }
+        return joined.toString();
     }
 
     private String relativeConfigPath(File config) {
@@ -153,8 +192,43 @@ public final class GuiDiagnostics extends GuiScreen {
             setClipboardString(report);
             copyLabelKey = "furusato.diagnostics.copied";
             button.displayString = I18n.format(copyLabelKey);
+        } else if (button.id == EXPORT_REPORT) {
+            if (exportReport()) {
+                exportLabelKey = "furusato.diagnostics.exported";
+            } else {
+                exportLabelKey = "furusato.diagnostics.exportFailed";
+            }
+            button.displayString = I18n.format(exportLabelKey);
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);
+        }
+    }
+
+    private boolean exportReport() {
+        File configFile = FurusatoEarlyConfig.getConfigurationFile();
+        File configDirectory = configFile == null ? null : configFile.getParentFile();
+        File gameDirectory = configDirectory == null
+                ? new File(".") : configDirectory.getParentFile();
+        if (gameDirectory == null) {
+            gameDirectory = new File(".");
+        }
+        File reportFile = new File(new File(gameDirectory, "logs"),
+                "furusato-diagnostics.txt");
+        File parent = reportFile.getParentFile();
+        if (!parent.isDirectory() && !parent.mkdirs()) {
+            return false;
+        }
+        try (Writer writer = new OutputStreamWriter(
+                new FileOutputStream(reportFile), StandardCharsets.UTF_8)) {
+            writer.write(report);
+            writer.write(System.lineSeparator());
+            return true;
+        } catch (IOException error) {
+            if (Furusato.getLogger() != null) {
+                Furusato.getLogger().error("Could not export diagnostics to {}",
+                        reportFile, error);
+            }
+            return false;
         }
     }
 
@@ -164,11 +238,11 @@ public final class GuiDiagnostics extends GuiScreen {
         int contentWidth = Math.min(620, Math.max(280, width - 32));
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
-        int rowHeight = 16;
+        int rowHeight = 14;
         int panelHeight = rows.size() * rowHeight + PANEL_PADDING * 2;
-        int groupHeight = panelHeight + 25;
-        int groupTop = Math.max(10, (height - 60 - groupHeight) / 2);
-        int panelTop = groupTop + 25;
+        int groupHeight = panelHeight + 20;
+        int groupTop = Math.max(5, (height - 55 - groupHeight) / 2);
+        int panelTop = groupTop + 20;
 
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);

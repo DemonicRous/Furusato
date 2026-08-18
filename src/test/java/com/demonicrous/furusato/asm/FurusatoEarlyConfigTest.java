@@ -19,7 +19,15 @@ public final class FurusatoEarlyConfigTest {
 
     @After
     public void resetConfiguration() {
+        System.clearProperty("furusato.safeMode");
         FurusatoEarlyConfig.resetForTests();
+    }
+
+    @Test
+    public void readsSafeModeBeforeConfigurationIsLoaded() {
+        assertFalse(FurusatoEarlyConfig.isSafeModeEnabled());
+        System.setProperty("furusato.safeMode", "true");
+        assertTrue(FurusatoEarlyConfig.isSafeModeEnabled());
     }
 
     @Test
