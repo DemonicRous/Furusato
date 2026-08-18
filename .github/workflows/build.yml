@@ -25,9 +25,21 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build --no-daemon
 
+      - name: Verify production mappings
+        shell: bash
+        run: |
+          jar_path="$(find build/libs -maxdepth 1 -name 'Furusato-*.jar' ! -name '*sources*' -print -quit)"
+          test -n "$jar_path"
+          javap -classpath "$jar_path" -c -p com.demonicrous.furusato.client.ClientGuiEvents > build/client-gui-events.bytecode.txt
+          grep -q 'field_146294_l' build/client-gui-events.bytecode.txt
+          if grep -q 'GuiScreen.width' build/client-gui-events.bytecode.txt; then
+            echo 'Production JAR still contains deobfuscated Minecraft fields'
+            exit 1
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Furusato-0.3.0
+          name: Furusato-build
           path: build/libs/*.jar
           if-no-files-found: error
