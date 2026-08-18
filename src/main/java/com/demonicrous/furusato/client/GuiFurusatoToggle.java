@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiButton;
 
 /** Standalone toggle using the same visual language as Furusato sliders. */
 final class GuiFurusatoToggle extends GuiButton {
-    private static final int TRACK_WIDTH = 34;
+    private static final int TRACK_WIDTH = 28;
     private boolean value;
 
     GuiFurusatoToggle(int id, int x, int y, int width, boolean initialValue) {
@@ -35,17 +35,17 @@ final class GuiFurusatoToggle extends GuiButton {
         hovered = mouseX >= x && mouseY >= y
                 && mouseX < x + width && mouseY < y + height;
         int trackLeft = x + width - TRACK_WIDTH - 2;
-        int trackTop = y + height / 2 - 3;
+        int trackTop = y + height / 2 - 2;
         int trackRight = trackLeft + TRACK_WIDTH;
-        drawRect(trackLeft, trackTop, trackRight, trackTop + 6, 0xFF202020);
-        drawRect(trackLeft + 1, trackTop + 1, trackRight - 1, trackTop + 5,
-                value ? 0xFF7070D8 : 0xFF606060);
-        int handleCenter = value ? trackRight - 5 : trackLeft + 5;
-        int handleColor = hovered ? 0xFFFFFFFF : 0xFFD0D0D0;
-        drawRect(handleCenter - 4, trackTop - 5,
-                handleCenter + 5, trackTop + 11, 0xFF000000);
+        drawRect(trackLeft, trackTop, trackRight, trackTop + 5, 0xFF201D24);
+        drawRect(trackLeft + 1, trackTop + 1, trackRight - 1, trackTop + 4,
+                value ? 0xFF7568B8 : 0xFF55515C);
+        int handleCenter = value ? trackRight - 4 : trackLeft + 4;
+        int handleColor = hovered ? 0xFFE8E4F0 : 0xFFC4C0CA;
         drawRect(handleCenter - 3, trackTop - 4,
-                handleCenter + 4, trackTop + 10, handleColor);
+                handleCenter + 4, trackTop + 9, 0xFF08060A);
+        drawRect(handleCenter - 2, trackTop - 3,
+                handleCenter + 3, trackTop + 8, handleColor);
         String label = displayString;
         int labelWidth = Math.max(0, trackLeft - x - 8);
         if (minecraft.fontRenderer.getStringWidth(label) > labelWidth) {

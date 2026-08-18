@@ -35,32 +35,36 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
     @Override
     public void initGui() {
         buttonList.clear();
-        int panelWidth = responsiveContentWidth(300, 500, 16);
+        int panelWidth = responsiveContentWidth(300, 620, 16);
         int left = (width - panelWidth) / 2;
-        int gap = 18;
-        int columnWidth = (panelWidth - 28 - gap) / 2;
-        int first = left + 14;
-        int second = first + columnWidth + gap;
-        int top = Math.max(42, height / 2 - 76);
+        int top = contentTop();
+        CardLayout layout = CardLayout.create(left, panelWidth);
 
-        hotbarToggle = addButton(new GuiFurusatoToggle(HOTBAR, first, top,
-                columnWidth, FurusatoEarlyConfig.isHotbarAnimationEnabled()));
-        pulseToggle = addButton(new GuiFurusatoToggle(HOTBAR_PULSE, first,
-                top + 30, columnWidth, FurusatoEarlyConfig.isHotbarPulseEnabled()));
-        hotbarDuration = addButton(new GuiFurusatoSlider(HOTBAR_DURATION, first,
-                top + 68, columnWidth, normalize(
-                        FurusatoEarlyConfig.getHotbarDurationMillis(), 50, 180)));
+        hotbarToggle = addButton(new GuiFurusatoToggle(HOTBAR,
+                layout.hotbarX + 10, top + 29, layout.hotbarWidth - 20,
+                FurusatoEarlyConfig.isHotbarAnimationEnabled()));
+        pulseToggle = addButton(new GuiFurusatoToggle(HOTBAR_PULSE,
+                layout.hotbarX + 10, top + 51, layout.hotbarWidth - 20,
+                FurusatoEarlyConfig.isHotbarPulseEnabled()));
+        hotbarDuration = addButton(new GuiFurusatoSlider(HOTBAR_DURATION,
+                layout.hotbarX + 11, top + 91, layout.hotbarWidth - 22,
+                normalize(FurusatoEarlyConfig.getHotbarDurationMillis(), 50, 180))
+                .setShowPercentage(false));
 
-        containerToggle = addButton(new GuiFurusatoToggle(CONTAINERS, second,
-                top, columnWidth, FurusatoEarlyConfig.isContainerAnimationEnabled()));
+        containerToggle = addButton(new GuiFurusatoToggle(CONTAINERS,
+                layout.containerX + 10, top + 29, layout.containerWidth - 20,
+                FurusatoEarlyConfig.isContainerAnimationEnabled()));
         containerDuration = addButton(new GuiFurusatoSlider(CONTAINER_DURATION,
-                second, top + 38, columnWidth, normalize(
-                        FurusatoEarlyConfig.getContainerDurationMillis(), 80, 400)));
-        blurToggle = addButton(new GuiFurusatoToggle(BLUR, second, top + 68,
-                columnWidth, FurusatoEarlyConfig.isContainerBlurEnabled()));
-        blurRadius = addButton(new GuiFurusatoSlider(BLUR_RADIUS, second,
-                top + 106, columnWidth, normalize(
-                        FurusatoEarlyConfig.getBlurRadius(), 2, 12)));
+                layout.containerX + 11, top + 69, layout.containerWidth - 22,
+                normalize(FurusatoEarlyConfig.getContainerDurationMillis(), 80, 400))
+                .setShowPercentage(false));
+        blurToggle = addButton(new GuiFurusatoToggle(BLUR,
+                layout.blurX + 10, top + 29, layout.blurWidth - 20,
+                FurusatoEarlyConfig.isContainerBlurEnabled()));
+        blurRadius = addButton(new GuiFurusatoSlider(BLUR_RADIUS,
+                layout.blurX + 11, top + 69, layout.blurWidth - 22,
+                normalize(FurusatoEarlyConfig.getBlurRadius(), 2, 12))
+                .setShowPercentage(false));
         addButton(new GuiButton(DONE, width / 2 - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
         refreshLabels();
@@ -78,18 +82,10 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
     }
 
     private void refreshLabels() {
-        hotbarToggle.displayString = I18n.format("furusato.effects.hotbar",
-                onOff(hotbarToggle.getValue()));
-        pulseToggle.displayString = I18n.format("furusato.effects.hotbarPulse",
-                onOff(pulseToggle.getValue()));
-        containerToggle.displayString = I18n.format("furusato.effects.containers",
-                onOff(containerToggle.getValue()));
-        blurToggle.displayString = I18n.format("furusato.effects.blur",
-                onOff(blurToggle.getValue()));
-    }
-
-    private String onOff(boolean enabled) {
-        return I18n.format(enabled ? "options.on" : "options.off");
+        hotbarToggle.displayString = I18n.format("furusato.effects.hotbar.label");
+        pulseToggle.displayString = I18n.format("furusato.effects.hotbarPulse.label");
+        containerToggle.displayString = I18n.format("furusato.effects.containers.label");
+        blurToggle.displayString = I18n.format("furusato.effects.blur.label");
     }
 
     private void saveSettings() {
@@ -102,38 +98,38 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
                 denormalize(blurRadius.getValue(), 2, 12));
         statusKey = saved ? "furusato.general.saved"
                 : "furusato.general.saveFailed";
-        statusColor = saved ? 0x55FF55 : 0xFF5555;
+        statusColor = saved ? 0xA8A4B0 : 0xFF5555;
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int top = Math.max(42, height / 2 - 76);
+        int top = contentTop();
         drawCenteredString(fontRenderer, I18n.format("furusato.effects.title"),
                 width / 2, 18, 0xFFFFFF);
         drawCenteredString(fontRenderer, I18n.format("furusato.effects.subtitle"),
                 width / 2, 31, 0xA0A0A0);
-        int panelWidth = responsiveContentWidth(300, 500, 16);
+        int panelWidth = responsiveContentWidth(300, 620, 16);
         int left = (width - panelWidth) / 2;
-        int gap = 18;
-        int columnWidth = (panelWidth - 28 - gap) / 2;
-        int first = left + 14;
-        int second = first + columnWidth + gap;
-        drawFurusatoPanel(first + 4, top + 2, columnWidth - 8, 88);
-        drawFurusatoPanel(second + 4, top + 2, columnWidth - 8, 50);
-        drawFurusatoPanel(second + 4, top + 70, columnWidth - 8, 50);
+        CardLayout layout = CardLayout.create(left, panelWidth);
+        drawEffectCard(layout.hotbarX, top, layout.hotbarWidth,
+                I18n.format("furusato.effects.card.hotbar"));
+        drawEffectCard(layout.containerX, top, layout.containerWidth,
+                I18n.format("furusato.effects.card.containers"));
+        drawEffectCard(layout.blurX, top, layout.blurWidth,
+                I18n.format("furusato.effects.card.blur"));
         drawString(fontRenderer, I18n.format("furusato.effects.hotbarSpeed",
                         denormalize(hotbarDuration.getValue(), 50, 180)),
-                first + 2, top + 59, 0xA0A0A0);
+                layout.hotbarX + 12, top + 79, 0xA8A4B0);
         drawString(fontRenderer, I18n.format("furusato.effects.containerSpeed",
                         denormalize(containerDuration.getValue(), 80, 400)),
-                second + 2, top + 29, 0xA0A0A0);
+                layout.containerX + 12, top + 57, 0xA8A4B0);
         drawString(fontRenderer, I18n.format("furusato.effects.blurRadius",
                         denormalize(blurRadius.getValue(), 2, 12)),
-                second + 2, top + 97, 0xA0A0A0);
+                layout.blurX + 12, top + 57, 0xA8A4B0);
         if (statusKey != null) {
             drawCenteredString(fontRenderer, I18n.format(statusKey),
-                    width / 2, top + 136, statusColor);
+                    width / 2, top + 132, statusColor);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -185,6 +181,47 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
 
     private static int denormalize(double value, int minimum, int maximum) {
         return minimum + (int) Math.round(value * (maximum - minimum));
+    }
+
+    private int contentTop() {
+        return Math.max(48, Math.min(height - 174, height / 2 - 66));
+    }
+
+    private void drawEffectCard(int x, int y, int cardWidth, String title) {
+        drawFurusatoPanel(x + 6, y + 6, cardWidth - 12, 108);
+        drawCenteredString(fontRenderer, title, x + cardWidth / 2,
+                y + 9, 0xE8E4F0);
+        drawRect(x + 11, y + 24, x + cardWidth - 11, y + 25,
+                0x505000FF);
+    }
+
+    private static final class CardLayout {
+        private static final int GAP = 12;
+        private final int hotbarX;
+        private final int hotbarWidth;
+        private final int containerX;
+        private final int containerWidth;
+        private final int blurX;
+        private final int blurWidth;
+
+        private CardLayout(int hotbarX, int hotbarWidth, int containerX,
+                int containerWidth, int blurX, int blurWidth) {
+            this.hotbarX = hotbarX;
+            this.hotbarWidth = hotbarWidth;
+            this.containerX = containerX;
+            this.containerWidth = containerWidth;
+            this.blurX = blurX;
+            this.blurWidth = blurWidth;
+        }
+
+        private static CardLayout create(int left, int width) {
+            int cardWidth = (width - GAP * 2) / 3;
+            int finalWidth = width - cardWidth * 2 - GAP * 2;
+            int second = left + cardWidth + GAP;
+            int third = second + cardWidth + GAP;
+            return new CardLayout(left, cardWidth, second, cardWidth,
+                    third, finalWidth);
+        }
     }
 
     @Override
