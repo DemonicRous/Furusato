@@ -2,11 +2,13 @@ package com.demonicrous.furusato.client;
 
 import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
 
@@ -21,9 +23,9 @@ public final class GuiFontSettings extends GuiScreen {
     private GuiResponsiveButton scaleButton;
     private GuiResponsiveButton unicodeButton;
     private GuiResponsiveButton patchButton;
-    private List<String> scaleHelp = Collections.emptyList();
-    private List<String> unicodeHelp = Collections.emptyList();
-    private List<String> patchHelp = Collections.emptyList();
+    private List<List<String>> scaleHelp = Collections.emptyList();
+    private List<List<String>> unicodeHelp = Collections.emptyList();
+    private List<List<String>> patchHelp = Collections.emptyList();
 
     public GuiFontSettings(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -45,12 +47,12 @@ public final class GuiFontSettings extends GuiScreen {
                 I18n.format("gui.done")));
         refreshLabels();
         int helpWidth = Math.max(80, Math.min(260, width - 30));
-        scaleHelp = fontRenderer.listFormattedStringToWidth(
-                I18n.format("furusato.font.help.scale"), helpWidth);
-        unicodeHelp = fontRenderer.listFormattedStringToWidth(
-                I18n.format("furusato.font.help.unicode"), helpWidth);
-        patchHelp = fontRenderer.listFormattedStringToWidth(
-                I18n.format("furusato.font.help.oddScale"), helpWidth);
+        scaleHelp = createHelp(helpWidth,
+                "furusato.font.help.scale.1", "furusato.font.help.scale.2");
+        unicodeHelp = createHelp(helpWidth,
+                "furusato.font.help.unicode.1", "furusato.font.help.unicode.2");
+        patchHelp = createHelp(helpWidth,
+                "furusato.font.help.oddScale.1", "furusato.font.help.oddScale.2");
     }
 
     @Override
@@ -142,12 +144,69 @@ public final class GuiFontSettings extends GuiScreen {
 
     private void drawHelpTooltip(int mouseX, int mouseY) {
         if (scaleButton != null && scaleButton.isMouseOver(mouseX, mouseY)) {
-            drawHoveringText(scaleHelp, mouseX, mouseY);
+            drawParagraphTooltip(scaleHelp, mouseX, mouseY);
         } else if (unicodeButton != null && unicodeButton.isMouseOver(mouseX, mouseY)) {
-            drawHoveringText(unicodeHelp, mouseX, mouseY);
+            drawParagraphTooltip(unicodeHelp, mouseX, mouseY);
         } else if (patchButton != null && patchButton.isMouseOver(mouseX, mouseY)) {
-            drawHoveringText(patchHelp, mouseX, mouseY);
+            drawParagraphTooltip(patchHelp, mouseX, mouseY);
         }
+    }
+
+    private List<List<String>> createHelp(int lineWidth, String... translationKeys) {
+        List<List<String>> paragraphs = new ArrayList<>();
+        for (String key : translationKeys) {
+            // Minecraft's formatter preserves color and style codes on wrapped lines.
+            // Each translation key is a separate paragraph, so formatting cannot leak.
+            paragraphs.add(fontRenderer.listFormattedStringToWidth(
+                    I18n.format(key), lineWidth));
+        }
+        return paragraphs;
+    }
+
+    private void drawParagraphTooltip(
+            List<List<String>> paragraphs, int mouseX, int mouseY) {
+        if (paragraphs.isEmpty()) {
+            return;
+        }
+
+        int tooltipWidth = 0;
+        int lineCount = 0;
+        for (List<String> paragraph : paragraphs) {
+            lineCount += paragraph.size();
+            for (String line : paragraph) {
+                tooltipWidth = Math.max(tooltipWidth, fontRenderer.getStringWidth(line));
+            }
+        }
+        int paragraphGap = 4;
+        int tooltipHeight = lineCount * fontRenderer.FONT_HEIGHT
+                + Math.max(0, paragraphs.size() - 1) * paragraphGap;
+        int left = mouseX + 12;
+        int top = mouseY - 12;
+        if (left + tooltipWidth + 8 > width) {
+            left = mouseX - 12 - tooltipWidth;
+        }
+        left = Math.max(4, left);
+        top = Math.max(5, Math.min(top, height - tooltipHeight - 5));
+
+        GlStateManager.disableLighting();
+        GlStateManager.disableDepth();
+        drawRect(left - 4, top - 5, left + tooltipWidth + 4,
+                top + tooltipHeight + 5, 0xF0100010);
+        drawRect(left - 3, top - 4, left + tooltipWidth + 3,
+                top + tooltipHeight + 4, 0xF0000010);
+
+        int textY = top;
+        for (int paragraphIndex = 0; paragraphIndex < paragraphs.size(); paragraphIndex++) {
+            for (String line : paragraphs.get(paragraphIndex)) {
+                fontRenderer.drawStringWithShadow(line, left, textY, 0xFFFFFF);
+                textY += fontRenderer.FONT_HEIGHT;
+            }
+            if (paragraphIndex + 1 < paragraphs.size()) {
+                textY += paragraphGap;
+            }
+        }
+        GlStateManager.enableDepth();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
