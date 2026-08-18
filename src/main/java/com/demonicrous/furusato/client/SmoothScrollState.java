@@ -16,6 +16,14 @@ final class SmoothScrollState {
         target = clamp(target + amount);
     }
 
+    void setTarget(double target) {
+        this.target = clamp(target);
+    }
+
+    double getMaximum() {
+        return maximum;
+    }
+
     void reset() {
         target = 0.0D;
         displayed = 0.0D;

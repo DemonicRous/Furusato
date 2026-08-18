@@ -42,22 +42,34 @@ final class GuiFurusatoSlider extends GuiButton {
     @Override
     public void drawButton(Minecraft minecraft, int mouseX, int mouseY,
             float partialTicks) {
-        displayString = Math.round(value * 100.0D) + "%";
-        super.drawButton(minecraft, mouseX, mouseY, partialTicks);
         if (!visible) {
             return;
         }
-        int trackLeft = x + 8;
-        int trackRight = x + width - 8;
-        int trackY = y + height - 4;
-        drawRect(trackLeft, trackY, trackRight, trackY + 1, 0xFF303030);
+        hovered = mouseX >= x && mouseY >= y
+                && mouseX < x + width && mouseY < y + height;
+        mouseDragged(minecraft, mouseX, mouseY);
+        int valueWidth = 38;
+        int trackLeft = x + 2;
+        int trackRight = x + width - valueWidth - 6;
+        int trackY = y + height / 2 - 2;
+        drawRect(trackLeft, trackY, trackRight, trackY + 4, 0xFF202020);
+        drawRect(trackLeft + 1, trackY + 1, trackRight - 1,
+                trackY + 3, 0xFF606060);
         int filled = trackLeft + (int) Math.round((trackRight - trackLeft) * value);
-        drawRect(trackLeft, trackY, filled, trackY + 1, 0xFF8080FF);
-        drawRect(filled - 1, trackY - 2, filled + 1, trackY + 3, 0xFFFFFFFF);
+        drawRect(trackLeft + 1, trackY + 1, filled, trackY + 3, 0xFF7070D8);
+        int handleColor = hovered ? 0xFFFFFFFF : 0xFFD0D0D0;
+        drawRect(filled - 4, trackY - 6, filled + 5, trackY + 10, 0xFF000000);
+        drawRect(filled - 3, trackY - 5, filled + 4, trackY + 9, handleColor);
+        String percentage = Math.round(value * 100.0D) + "%";
+        minecraft.fontRenderer.drawStringWithShadow(percentage,
+                x + width - valueWidth, y + 6, 0xFFFFFF);
     }
 
     private void updateValue(int mouseX) {
-        value = clamp((mouseX - (x + 8.0D)) / Math.max(1.0D, width - 16.0D));
+        int valueWidth = 38;
+        double trackLeft = x + 2.0D;
+        double trackWidth = Math.max(1.0D, width - valueWidth - 8.0D);
+        value = clamp((mouseX - trackLeft) / trackWidth);
     }
 
     private static double clamp(double value) {

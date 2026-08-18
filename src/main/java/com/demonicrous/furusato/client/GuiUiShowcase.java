@@ -18,6 +18,7 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
     private final GuiScreen parentScreen;
     private boolean toggleEnabled = true;
     private final SmoothScrollState scroll = new SmoothScrollState();
+    private final GuiFurusatoScrollBar scrollBar = new GuiFurusatoScrollBar(scroll);
     private long lastFrameNanos = System.nanoTime();
     private GuiResponsiveButton toggleButton;
     private GuiFurusatoSlider slider;
@@ -104,14 +105,9 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
         endScissor();
         int trackTop = top + 4;
         int trackHeight = VISIBLE_ROWS * ROW_HEIGHT;
-        int thumbHeight = trackHeight * VISIBLE_ROWS / SAMPLE_ROWS;
-        int thumbTop = trackTop + (int) Math.round(
-                (trackHeight - thumbHeight) * displayedOffset
-                        / (SAMPLE_ROWS - VISIBLE_ROWS));
-        drawRect(left + panelWidth - 5, trackTop,
-                left + panelWidth - 3, trackTop + trackHeight, 0x44000000);
-        drawRect(left + panelWidth - 5, thumbTop,
-                left + panelWidth - 3, thumbTop + thumbHeight, 0xFFAAAAAA);
+        scrollBar.setBounds(left + panelWidth - 16, trackTop,
+                trackHeight, SAMPLE_ROWS, VISIBLE_ROWS);
+        scrollBar.draw(mc);
     }
 
     @Override
@@ -122,6 +118,30 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
             scroll.setMaximum(SAMPLE_ROWS - VISIBLE_ROWS);
             scroll.scrollBy(wheel < 0 ? 1.0D : -1.0D);
         }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
+            throws IOException {
+        if (mouseButton == 0 && scrollBar.mousePressed(mouseX, mouseY)) {
+            return;
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton,
+            long timeSinceLastClick) {
+        if (clickedMouseButton == 0) {
+            scrollBar.mouseDragged(mouseY);
+        }
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state) {
+        scrollBar.mouseReleased();
+        super.mouseReleased(mouseX, mouseY, state);
     }
 
     @Override
