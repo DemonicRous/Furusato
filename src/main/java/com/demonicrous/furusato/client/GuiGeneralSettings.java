@@ -11,12 +11,14 @@ public final class GuiGeneralSettings extends GuiScreen {
     private static final int DIAGNOSTIC_LOGGING = 10;
     private static final int SAFE_MODE = 11;
     private static final int RESET_DEFAULTS = 12;
+    private static final int REVERT_PENDING = 13;
     private static final int DONE = 200;
 
     private final GuiScreen parentScreen;
     private GuiResponsiveButton loggingButton;
     private GuiResponsiveButton safeModeButton;
     private GuiResponsiveButton resetButton;
+    private GuiResponsiveButton revertButton;
     private boolean confirmReset;
     private boolean restartRequired;
     private String statusKey;
@@ -30,7 +32,7 @@ public final class GuiGeneralSettings extends GuiScreen {
     public void initGui() {
         buttonList.clear();
         int center = width / 2;
-        int top = height / 2 - 55;
+        int top = height / 2 - 70;
         loggingButton = addButton(new GuiResponsiveButton(
                 DIAGNOSTIC_LOGGING, center - 100, top, 200, 20, ""));
         safeModeButton = addButton(new GuiResponsiveButton(
@@ -38,6 +40,8 @@ public final class GuiGeneralSettings extends GuiScreen {
         safeModeButton.enabled = false;
         resetButton = addButton(new GuiResponsiveButton(
                 RESET_DEFAULTS, center - 100, top + 60, 200, 20, ""));
+        revertButton = addButton(new GuiResponsiveButton(
+                REVERT_PENDING, center - 100, top + 90, 200, 20, ""));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
         refreshLabels();
@@ -54,6 +58,9 @@ public final class GuiGeneralSettings extends GuiScreen {
                         ? "options.on" : "options.off")));
         resetButton.setFullText(fontRenderer, I18n.format(confirmReset
                 ? "furusato.general.reset.confirm" : "furusato.general.reset"));
+        revertButton.setFullText(fontRenderer,
+                I18n.format("furusato.general.revertPending"));
+        revertButton.enabled = FurusatoEarlyConfig.isRestartPending();
     }
 
     @Override
@@ -79,6 +86,11 @@ public final class GuiGeneralSettings extends GuiScreen {
             confirmReset = false;
             showSaveResult(saved);
             refreshLabels();
+        } else if (button.id == REVERT_PENDING) {
+            boolean saved = FurusatoEarlyConfig.revertPendingUnicodeGuiScaleChange();
+            showSaveResult(saved);
+            restartRequired = FurusatoEarlyConfig.isRestartPending();
+            refreshLabels();
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);
         }
@@ -98,7 +110,7 @@ public final class GuiGeneralSettings extends GuiScreen {
             drawCenteredString(fontRenderer, I18n.format(statusKey),
                     width / 2, height / 2 + 45, statusColor);
         }
-        if (restartRequired) {
+        if (restartRequired || FurusatoEarlyConfig.isRestartPending()) {
             drawCenteredString(fontRenderer, I18n.format("furusato.general.restart"),
                     width / 2, height / 2 + 58, 0xFFAA00);
         }

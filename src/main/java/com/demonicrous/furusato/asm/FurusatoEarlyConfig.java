@@ -22,6 +22,7 @@ public final class FurusatoEarlyConfig {
     private static final String SAFE_MODE_PROPERTY = "furusato.safeMode";
 
     private static volatile boolean unicodeGuiScaleEnabled = true;
+    private static volatile boolean activeUnicodeGuiScaleEnabled = true;
     private static volatile boolean diagnosticLoggingEnabled = true;
     private static File configurationFile;
     private static Properties configuration = new Properties();
@@ -60,6 +61,7 @@ public final class FurusatoEarlyConfig {
             }
 
             unicodeGuiScaleEnabled = readBoolean(properties, Option.UNICODE_GUI_SCALE);
+            activeUnicodeGuiScaleEnabled = unicodeGuiScaleEnabled;
             diagnosticLoggingEnabled = readBoolean(properties, Option.DIAGNOSTIC_LOGGING);
             configurationFile = file;
             configuration = properties;
@@ -75,6 +77,7 @@ public final class FurusatoEarlyConfig {
             LOGGER.info("Loaded early configuration from {}", file.getAbsolutePath());
         } catch (IOException error) {
             unicodeGuiScaleEnabled = true;
+            activeUnicodeGuiScaleEnabled = true;
             diagnosticLoggingEnabled = true;
             LOGGER.error("Could not load {}; using Furusato defaults", file, error);
         }
@@ -82,6 +85,15 @@ public final class FurusatoEarlyConfig {
 
     public static boolean isUnicodeGuiScaleEnabled() {
         return unicodeGuiScaleEnabled;
+    }
+
+    /** Value captured during CoreMod startup and currently represented by bytecode. */
+    public static boolean isActiveUnicodeGuiScaleEnabled() {
+        return activeUnicodeGuiScaleEnabled;
+    }
+
+    public static boolean isRestartPending() {
+        return unicodeGuiScaleEnabled != activeUnicodeGuiScaleEnabled;
     }
 
     public static boolean isDiagnosticLoggingEnabled() {
@@ -112,6 +124,11 @@ public final class FurusatoEarlyConfig {
 
     public static synchronized boolean setDiagnosticLoggingEnabled(boolean enabled) {
         return set(Option.DIAGNOSTIC_LOGGING, enabled);
+    }
+
+    public static synchronized boolean revertPendingUnicodeGuiScaleChange() {
+        return !isRestartPending()
+                || set(Option.UNICODE_GUI_SCALE, activeUnicodeGuiScaleEnabled);
     }
 
     public static synchronized boolean resetDefaults() {
@@ -225,6 +242,7 @@ public final class FurusatoEarlyConfig {
 
     static void resetForTests() {
         unicodeGuiScaleEnabled = true;
+        activeUnicodeGuiScaleEnabled = true;
         diagnosticLoggingEnabled = true;
         configurationFile = null;
         configuration = new Properties();

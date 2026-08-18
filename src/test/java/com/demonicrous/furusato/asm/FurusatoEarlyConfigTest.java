@@ -72,6 +72,23 @@ public final class FurusatoEarlyConfigTest {
     }
 
     @Test
+    public void tracksAndRevertsRestartRequiredChange() throws Exception {
+        File gameDirectory = temporaryFolder.newFolder("pending-restart");
+        FurusatoEarlyConfig.load(gameDirectory);
+
+        assertTrue(FurusatoEarlyConfig.isActiveUnicodeGuiScaleEnabled());
+        assertFalse(FurusatoEarlyConfig.isRestartPending());
+        assertTrue(FurusatoEarlyConfig.setUnicodeGuiScaleEnabled(false));
+        assertFalse(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
+        assertTrue(FurusatoEarlyConfig.isActiveUnicodeGuiScaleEnabled());
+        assertTrue(FurusatoEarlyConfig.isRestartPending());
+
+        assertTrue(FurusatoEarlyConfig.revertPendingUnicodeGuiScaleChange());
+        assertTrue(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
+        assertFalse(FurusatoEarlyConfig.isRestartPending());
+    }
+
+    @Test
     public void atomicallySavesDiagnosticsAndPreservesUnknownProperties() throws Exception {
         File gameDirectory = temporaryFolder.newFolder("atomic");
         File configDirectory = new File(gameDirectory, "config");
