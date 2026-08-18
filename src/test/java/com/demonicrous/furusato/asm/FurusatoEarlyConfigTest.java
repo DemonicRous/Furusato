@@ -2,6 +2,7 @@ package com.demonicrous.furusato.asm;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,7 +39,32 @@ public final class FurusatoEarlyConfigTest {
 
         assertTrue(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
         assertTrue(FurusatoEarlyConfig.isDiagnosticLoggingEnabled());
+        assertTrue(FurusatoEarlyConfig.isHotbarAnimationEnabled());
+        assertTrue(FurusatoEarlyConfig.isContainerAnimationEnabled());
+        assertTrue(FurusatoEarlyConfig.isContainerBlurEnabled());
+        assertEquals(90, FurusatoEarlyConfig.getHotbarDurationMillis());
+        assertEquals(180, FurusatoEarlyConfig.getContainerDurationMillis());
+        assertEquals(6, FurusatoEarlyConfig.getBlurRadius());
         assertTrue(new File(gameDirectory, "config/furusato.properties").isFile());
+    }
+
+    @Test
+    public void persistsAndClampsRuntimeEffectSettings() throws Exception {
+        File gameDirectory = temporaryFolder.newFolder("effects");
+        FurusatoEarlyConfig.load(gameDirectory);
+
+        assertTrue(FurusatoEarlyConfig.setEffectsSettings(
+                false, false, 1, false, 999, false, 99));
+        FurusatoEarlyConfig.resetForTests();
+        FurusatoEarlyConfig.load(gameDirectory);
+
+        assertFalse(FurusatoEarlyConfig.isHotbarAnimationEnabled());
+        assertFalse(FurusatoEarlyConfig.isHotbarPulseEnabled());
+        assertEquals(50, FurusatoEarlyConfig.getHotbarDurationMillis());
+        assertFalse(FurusatoEarlyConfig.isContainerAnimationEnabled());
+        assertEquals(400, FurusatoEarlyConfig.getContainerDurationMillis());
+        assertFalse(FurusatoEarlyConfig.isContainerBlurEnabled());
+        assertEquals(12, FurusatoEarlyConfig.getBlurRadius());
     }
 
     @Test

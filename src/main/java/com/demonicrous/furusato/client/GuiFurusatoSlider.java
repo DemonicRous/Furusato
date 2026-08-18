@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiButton;
 final class GuiFurusatoSlider extends GuiButton {
     private double value;
     private boolean dragging;
+    private boolean showPercentage = true;
 
     GuiFurusatoSlider(int id, int x, int y, int width, double initialValue) {
         super(id, x, y, width, 20, "");
@@ -15,6 +16,11 @@ final class GuiFurusatoSlider extends GuiButton {
 
     double getValue() {
         return value;
+    }
+
+    GuiFurusatoSlider setShowPercentage(boolean showPercentage) {
+        this.showPercentage = showPercentage;
+        return this;
     }
 
     @Override
@@ -48,27 +54,30 @@ final class GuiFurusatoSlider extends GuiButton {
         hovered = mouseX >= x && mouseY >= y
                 && mouseX < x + width && mouseY < y + height;
         mouseDragged(minecraft, mouseX, mouseY);
-        int valueWidth = 38;
+        int valueWidth = showPercentage ? 38 : 0;
         int trackLeft = x + 2;
-        int trackRight = x + width - valueWidth - 6;
-        int trackY = y + height / 2 - 2;
-        drawRect(trackLeft, trackY, trackRight, trackY + 4, 0xFF202020);
+        int trackRight = x + width - valueWidth - (showPercentage ? 6 : 2);
+        int trackY = y + height / 2 - 1;
+        drawRect(trackLeft, trackY, trackRight, trackY + 3, 0xFF202020);
         drawRect(trackLeft + 1, trackY + 1, trackRight - 1,
-                trackY + 3, 0xFF606060);
+                trackY + 2, 0xFF55515C);
         int filled = trackLeft + (int) Math.round((trackRight - trackLeft) * value);
         drawRect(trackLeft + 1, trackY + 1, filled, trackY + 3, 0xFF7070D8);
-        int handleColor = hovered ? 0xFFFFFFFF : 0xFFD0D0D0;
-        drawRect(filled - 4, trackY - 6, filled + 5, trackY + 10, 0xFF000000);
-        drawRect(filled - 3, trackY - 5, filled + 4, trackY + 9, handleColor);
-        String percentage = Math.round(value * 100.0D) + "%";
-        minecraft.fontRenderer.drawStringWithShadow(percentage,
-                x + width - valueWidth, y + 6, 0xFFFFFF);
+        int handleColor = hovered ? 0xFFE8E4F0 : 0xFFC4C0CA;
+        drawRect(filled - 3, trackY - 5, filled + 4, trackY + 8, 0xFF08060A);
+        drawRect(filled - 2, trackY - 4, filled + 3, trackY + 7, handleColor);
+        if (showPercentage) {
+            String percentage = Math.round(value * 100.0D) + "%";
+            minecraft.fontRenderer.drawStringWithShadow(percentage,
+                    x + width - valueWidth, y + 6, 0xD8D4DC);
+        }
     }
 
     private void updateValue(int mouseX) {
-        int valueWidth = 38;
+        int valueWidth = showPercentage ? 38 : 0;
         double trackLeft = x + 2.0D;
-        double trackWidth = Math.max(1.0D, width - valueWidth - 8.0D);
+        double trackWidth = Math.max(1.0D, width - valueWidth
+                - (showPercentage ? 8.0D : 4.0D));
         value = clamp((mouseX - trackLeft) / trackWidth);
     }
 
