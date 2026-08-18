@@ -14,7 +14,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
 
 /** Font and GUI scale settings inspired by modern Minecraft versions. */
-public final class GuiFontSettings extends GuiScreen {
+public final class GuiFontSettings extends GuiFurusatoScreen {
     private static final int NEXT_SCALE = 11;
     private static final int FORCE_UNICODE = 12;
     private static final int PRESERVE_ODD_SCALE = 13;
@@ -201,7 +201,7 @@ public final class GuiFontSettings extends GuiScreen {
         GlStateManager.disableDepth();
         float previousZLevel = zLevel;
         zLevel = 300.0F;
-        drawVanillaTooltipBackground(left, top, tooltipWidth, tooltipHeight);
+        drawFurusatoPanel(left, top, tooltipWidth, tooltipHeight);
 
         int textY = top;
         for (int paragraphIndex = 0; paragraphIndex < paragraphs.size(); paragraphIndex++) {
@@ -216,41 +216,6 @@ public final class GuiFontSettings extends GuiScreen {
         zLevel = previousZLevel;
         GlStateManager.enableDepth();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-    }
-
-    /** Matches the background and border used by GuiScreen.drawHoveringText. */
-    private void drawVanillaTooltipBackground(
-            int left, int top, int tooltipWidth, int tooltipHeight) {
-        int background = 0xF0100010;
-        int borderTop = 0x505000FF;
-        int borderBottom = (borderTop & 0xFEFEFE) >> 1
-                | borderTop & 0xFF000000;
-        int right = left + tooltipWidth;
-        int bottom = top + tooltipHeight;
-        int padding = 2;
-        int boxLeft = left - 4 - padding;
-        int boxTop = top - 4 - padding;
-        int boxRight = right + 4 + padding;
-        int boxBottom = bottom + 4 + padding;
-
-        drawGradientRect(boxLeft + 1, boxTop, boxRight - 1, boxTop + 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxBottom - 1, boxRight - 1, boxBottom,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft, boxTop + 1, boxLeft + 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxRight - 1, boxTop + 1, boxRight, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 2, boxLeft + 2, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxRight - 2, boxTop + 2, boxRight - 1, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxTop + 2,
-                borderTop, borderTop);
-        drawGradientRect(boxLeft + 1, boxBottom - 2, boxRight - 1, boxBottom - 1,
-                borderBottom, borderBottom);
     }
 
     @Override

@@ -22,9 +22,10 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.ForgeVersion;
+import org.lwjgl.input.Mouse;
 
 /** Read-only runtime diagnostics and a copyable support report. */
-public final class GuiDiagnostics extends GuiScreen {
+public final class GuiDiagnostics extends GuiFurusatoScreen {
     private static final int COPY_REPORT = 10;
     private static final int EXPORT_REPORT = 11;
     private static final int OPEN_REPORTS = 12;
@@ -43,6 +44,9 @@ public final class GuiDiagnostics extends GuiScreen {
     private String exportLabelKey = "furusato.diagnostics.export";
     private String openLabelKey = "furusato.diagnostics.openFolder";
     private Category activeCategory = Category.OVERVIEW;
+    private final SmoothScrollState scroll = new SmoothScrollState();
+    private final GuiFurusatoScrollBar scrollBar = new GuiFurusatoScrollBar(scroll);
+    private long lastFrameNanos = System.nanoTime();
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -53,32 +57,62 @@ public final class GuiDiagnostics extends GuiScreen {
         buttonList.clear();
         refreshDiagnostics();
         int center = width / 2;
-        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        boolean compact = isCompactLayout();
+        int contentWidth = responsiveContentWidth(280, compact ? 380 : 500, 12);
         int contentLeft = (width - contentWidth) / 2;
-        int panelHeight = visibleRowCapacity() * 14 + PANEL_PADDING * 2;
-        int groupHeight = panelHeight + 46;
-        int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
-        int tabTop = groupTop + 20;
+        int headerHeight = compact ? 78 : 54;
+        int panelHeight = panelHeight(headerHeight);
+        int groupHeight = panelHeight + headerHeight;
+        int footerHeight = 52;
+        int groupTop = Math.max(8, (height - groupHeight - footerHeight) / 2);
+        int cardLeft = contentLeft + 8;
+        int cardWidth = contentWidth - 16;
+        int tabTop = groupTop + 26;
         int gap = 4;
-        int tabWidth = (contentWidth - gap * 3) / 4;
-        addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
-                contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
-        addCategoryButton(RENDERING_TAB, Category.RENDERING,
-                contentLeft + tabWidth + gap, tabTop, tabWidth,
-                "furusato.diagnostics.tab.rendering");
-        addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
-                contentLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
-                "furusato.diagnostics.tab.compatibility");
-        addCategoryButton(ISSUES_TAB, Category.ISSUES,
-                contentLeft + (tabWidth + gap) * 3, tabTop, tabWidth,
-                "furusato.diagnostics.tab.issues");
-        addButton(new GuiResponsiveButton(COPY_REPORT, center - 151, height - 51, 98, 20,
+        if (compact) {
+            int tabWidth = (cardWidth - gap) / 2;
+            addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
+                    cardLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
+            addCategoryButton(RENDERING_TAB, Category.RENDERING,
+                    cardLeft + tabWidth + gap, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.rendering");
+            addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
+                    cardLeft, tabTop + 24, tabWidth,
+                    "furusato.diagnostics.tab.compatibility");
+            addCategoryButton(ISSUES_TAB, Category.ISSUES,
+                    cardLeft + tabWidth + gap, tabTop + 24, tabWidth,
+                    "furusato.diagnostics.tab.issues");
+        } else {
+            int tabWidth = (cardWidth - gap * 3) / 4;
+            addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
+                    cardLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
+            addCategoryButton(RENDERING_TAB, Category.RENDERING,
+                    cardLeft + tabWidth + gap, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.rendering");
+            addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
+                    cardLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.compatibility");
+            addCategoryButton(ISSUES_TAB, Category.ISSUES,
+                    cardLeft + (tabWidth + gap) * 3, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.issues");
+        }
+        int actionTop = groupTop + groupHeight + 8;
+        int actionWidth = Math.min(360, contentWidth);
+        int actionLeft = center - actionWidth / 2;
+        int actionGap = 4;
+        int actionButtonWidth = (actionWidth - actionGap * 2) / 3;
+        addButton(new GuiResponsiveButton(COPY_REPORT, actionLeft, actionTop,
+                actionButtonWidth, 20,
                 I18n.format(copyLabelKey)));
-        addButton(new GuiResponsiveButton(EXPORT_REPORT, center - 49, height - 51, 98, 20,
+        addButton(new GuiResponsiveButton(EXPORT_REPORT,
+                actionLeft + actionButtonWidth + actionGap, actionTop,
+                actionButtonWidth, 20,
                 I18n.format(exportLabelKey)));
-        addButton(new GuiResponsiveButton(OPEN_REPORTS, center + 53, height - 51, 98, 20,
+        addButton(new GuiResponsiveButton(OPEN_REPORTS,
+                actionLeft + (actionButtonWidth + actionGap) * 2, actionTop,
+                actionButtonWidth, 20,
                 I18n.format(openLabelKey)));
-        addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
+        addButton(new GuiButton(DONE, actionLeft, actionTop + 24, actionWidth, 20,
                 I18n.format("gui.done")));
     }
 
@@ -285,6 +319,7 @@ public final class GuiDiagnostics extends GuiScreen {
 
     private void selectCategory(Category category) {
         activeCategory = category;
+        scroll.reset();
         initGui();
     }
 
@@ -342,24 +377,42 @@ public final class GuiDiagnostics extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        boolean compact = isCompactLayout();
+        int contentWidth = responsiveContentWidth(280, compact ? 380 : 500, 12);
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int panelHeight = visibleRowCapacity() * rowHeight + PANEL_PADDING * 2;
-        int groupHeight = panelHeight + 46;
-        int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
-        int panelTop = groupTop + 46;
+        int headerHeight = compact ? 78 : 54;
+        int panelHeight = panelHeight(headerHeight);
+        int groupHeight = panelHeight + headerHeight;
+        int footerHeight = 52;
+        int groupTop = Math.max(8, (height - groupHeight - footerHeight) / 2);
+        int panelTop = groupTop + headerHeight;
 
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);
 
-        drawTooltipStylePanel(contentLeft + 6, panelTop + 6,
-                contentWidth - 12, panelHeight - 12);
+        int cardTop = groupTop + 18;
+        drawFurusatoPanel(contentLeft + 6, cardTop + 6,
+                contentWidth - 12, groupHeight - 18 - 12);
+
+        drawRect(contentLeft + 10, panelTop + 2,
+                contentRight - 10, panelTop + panelHeight - 8, 0x70000000);
+        drawRect(contentLeft + 10, panelTop + 2,
+                contentRight - 10, panelTop + 3, 0x405000FF);
 
         List<Row> visibleRows = visibleRows();
+        int capacity = FurusatoGuiLayout.visibleRows(
+                panelHeight, PANEL_PADDING, rowHeight);
+        scroll.setMaximum(Math.max(0, visibleRows.size() - capacity));
+        long now = System.nanoTime();
+        double displayedOffset = scroll.update((now - lastFrameNanos) / 1.0E9D);
+        lastFrameNanos = now;
+        int firstRow = Math.max(0, (int) Math.floor(displayedOffset));
+        int lastRow = Math.min(visibleRows.size(), firstRow + capacity + 2);
+        List<Row> displayedRows = visibleRows.subList(firstRow, lastRow);
         int labelWidth = 0;
-        for (Row row : visibleRows) {
+        for (Row row : displayedRows) {
             labelWidth = Math.max(labelWidth,
                     fontRenderer.getStringWidth(row.label + ":"));
         }
@@ -367,12 +420,17 @@ public final class GuiDiagnostics extends GuiScreen {
         int labelX = contentLeft + PANEL_PADDING;
         int valueX = labelX + labelWidth + 18;
         int maxValueWidth = Math.max(60,
-                contentRight - valueX - PANEL_PADDING);
+                contentRight - valueX - PANEL_PADDING - 18);
         Row hoveredRow = null;
-        for (int index = 0; index < visibleRows.size(); index++) {
-            Row row = visibleRows.get(index);
-            int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
-            if ((index & 1) == 1) {
+        int clipTop = panelTop + PANEL_PADDING;
+        int clipBottom = panelTop + panelHeight - PANEL_PADDING;
+        beginScissor(contentLeft + 2, clipTop, contentRight - 2, clipBottom);
+        for (int index = 0; index < displayedRows.size(); index++) {
+            Row row = displayedRows.get(index);
+            int absoluteIndex = firstRow + index;
+            int rowTop = panelTop + PANEL_PADDING
+                    + (int) Math.round((absoluteIndex - displayedOffset) * rowHeight);
+            if ((absoluteIndex & 1) == 1) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
                         rowTop + rowHeight, 0x10000000);
             }
@@ -387,6 +445,10 @@ public final class GuiDiagnostics extends GuiScreen {
             drawString(fontRenderer, fitText(row.value, maxValueWidth),
                     valueX, textY, row.color);
         }
+        endScissor();
+        scrollBar.setBounds(contentRight - 24, clipTop,
+                clipBottom - clipTop, visibleRows.size(), capacity);
+        scrollBar.draw(mc);
         super.drawScreen(mouseX, mouseY, partialTicks);
         if (hoveredRow != null
                 && fontRenderer.getStringWidth(hoveredRow.value) > maxValueWidth) {
@@ -396,8 +458,52 @@ public final class GuiDiagnostics extends GuiScreen {
         }
     }
 
-    private int visibleRowCapacity() {
-        return Math.max(4, visibleRows().size());
+    private int panelHeight(int headerHeight) {
+        int desired = Math.max(4, visibleRows().size()) * 14 + PANEL_PADDING * 2;
+        int available = Math.max(34, height - 16 - 52 - headerHeight);
+        return Math.min(desired, available);
+    }
+
+    private boolean isCompactLayout() {
+        return FurusatoViewport.isCompact(width, height,
+                mc.displayWidth, mc.displayHeight);
+    }
+
+    @Override
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        int wheel = Mouse.getEventDWheel();
+        if (wheel != 0) {
+            int headerHeight = isCompactLayout() ? 78 : 54;
+            int capacity = FurusatoGuiLayout.visibleRows(
+                    panelHeight(headerHeight), PANEL_PADDING, 14);
+            scroll.setMaximum(Math.max(0, visibleRows().size() - capacity));
+            scroll.scrollBy(wheel < 0 ? 1.0D : -1.0D);
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
+            throws IOException {
+        if (mouseButton == 0 && scrollBar.mousePressed(mouseX, mouseY)) {
+            return;
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton,
+            long timeSinceLastClick) {
+        if (clickedMouseButton == 0) {
+            scrollBar.mouseDragged(mouseY);
+        }
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state) {
+        scrollBar.mouseReleased();
+        super.mouseReleased(mouseX, mouseY, state);
     }
 
     private List<Row> visibleRows() {
@@ -408,41 +514,6 @@ public final class GuiDiagnostics extends GuiScreen {
             }
         }
         return visible;
-    }
-
-    /** Same background, border colors and padding as Furusato's tooltips. */
-    private void drawTooltipStylePanel(
-            int left, int top, int panelWidth, int panelHeight) {
-        int background = 0xF0100010;
-        int borderTop = 0x505000FF;
-        int borderBottom = (borderTop & 0xFEFEFE) >> 1
-                | borderTop & 0xFF000000;
-        int right = left + panelWidth;
-        int bottom = top + panelHeight;
-        int padding = 2;
-        int boxLeft = left - 4 - padding;
-        int boxTop = top - 4 - padding;
-        int boxRight = right + 4 + padding;
-        int boxBottom = bottom + 4 + padding;
-
-        drawGradientRect(boxLeft + 1, boxTop, boxRight - 1, boxTop + 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxBottom - 1, boxRight - 1, boxBottom,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft, boxTop + 1, boxLeft + 1, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxRight - 1, boxTop + 1, boxRight, boxBottom - 1,
-                background, background);
-        drawGradientRect(boxLeft + 1, boxTop + 2, boxLeft + 2, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxRight - 2, boxTop + 2, boxRight - 1, boxBottom - 2,
-                borderTop, borderBottom);
-        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxTop + 2,
-                borderTop, borderTop);
-        drawGradientRect(boxLeft + 1, boxBottom - 2, boxRight - 1, boxBottom - 1,
-                borderBottom, borderBottom);
     }
 
     private String fitText(String text, int maxWidth) {

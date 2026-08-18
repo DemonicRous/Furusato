@@ -7,7 +7,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 
 /** General Furusato configuration with explicit save feedback. */
-public final class GuiGeneralSettings extends GuiScreen {
+public final class GuiGeneralSettings extends GuiFurusatoScreen {
     private static final int DIAGNOSTIC_LOGGING = 10;
     private static final int SAFE_MODE = 11;
     private static final int RESET_DEFAULTS = 12;
