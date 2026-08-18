@@ -4,6 +4,7 @@
 bin/
 build/
 run/
+logs/
 eclipse/
 
 .project
@@ -12,4 +13,3 @@ eclipse/
 *.ipr
 *.iws
 *.launch
-
