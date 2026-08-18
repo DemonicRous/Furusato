@@ -1,14 +1,14 @@
-package com.demonicrous.limecore.asm;
+package com.demonicrous.furusato.asm;
 
 import java.io.File;
 import java.util.Map;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 
-/** Loads Lime Core bytecode transformers before Minecraft classes are defined. */
-@IFMLLoadingPlugin.Name("Lime Core")
+/** Loads Furusato bytecode transformers before Minecraft classes are defined. */
+@IFMLLoadingPlugin.Name("Furusato")
 @IFMLLoadingPlugin.MCVersion("1.12.2")
-@IFMLLoadingPlugin.TransformerExclusions("com.demonicrous.limecore.asm")
-public final class LimeCorePlugin implements IFMLLoadingPlugin {
+@IFMLLoadingPlugin.TransformerExclusions("com.demonicrous.furusato.asm")
+public final class FurusatoPlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
         PatchDiagnostics.register("unicode_gui_scale");
@@ -30,7 +30,7 @@ public final class LimeCorePlugin implements IFMLLoadingPlugin {
     @Override
     public void injectData(Map<String, Object> data) {
         Object gameDirectory = data.get("mcLocation");
-        LimeCoreEarlyConfig.load(gameDirectory instanceof File ? (File) gameDirectory : null);
+        FurusatoEarlyConfig.load(gameDirectory instanceof File ? (File) gameDirectory : null);
     }
 
     @Override

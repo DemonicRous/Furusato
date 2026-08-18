@@ -26,11 +26,11 @@ minecraft {
     runDir = 'run'
 
     replace '@VERSION@', project.version
-    replaceIn 'LimeCore.java'
+    replaceIn 'Furusato.java'
 }
 
 runClient {
-    jvmArgs '-Dfml.coreMods.load=com.demonicrous.limecore.asm.LimeCorePlugin'
+    jvmArgs '-Dfml.coreMods.load=com.demonicrous.furusato.asm.FurusatoPlugin'
 }
 
 dependencies {
@@ -67,7 +67,7 @@ jar {
             'Implementation-Title': project.name,
             'Implementation-Version': project.version,
             'Implementation-Vendor': mod_author,
-            'FMLCorePlugin': 'com.demonicrous.limecore.asm.LimeCorePlugin',
+            'FMLCorePlugin': 'com.demonicrous.furusato.asm.FurusatoPlugin',
             'FMLCorePluginContainsFMLMod': 'true'
         )
     }

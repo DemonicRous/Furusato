@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.asm;
+package com.demonicrous.furusato.asm;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 /** Collects the state of early bytecode patches for one startup. */
 public final class PatchDiagnostics {
-    private static final Logger LOGGER = LogManager.getLogger("Lime Core/Diagnostics");
+    private static final Logger LOGGER = LogManager.getLogger("Furusato/Diagnostics");
     private static final Map<String, Result> RESULTS = new LinkedHashMap<String, Result>();
 
     private PatchDiagnostics() {
@@ -38,7 +38,7 @@ public final class PatchDiagnostics {
 
     private static void update(String patch, String status, String detail) {
         RESULTS.put(patch, new Result(status, detail));
-        if (!LimeCoreEarlyConfig.isDiagnosticLoggingEnabled()) {
+        if (!FurusatoEarlyConfig.isDiagnosticLoggingEnabled()) {
             return;
         }
         LOGGER.info("{}: {} ({})", patch, status, detail);
