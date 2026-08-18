@@ -105,5 +105,9 @@ public final class LimeCoreEarlyConfig {
     static void setUnicodeGuiScaleEnabledForTests(boolean enabled) {
         unicodeGuiScaleEnabled = enabled;
     }
-}
 
+    static void resetForTests() {
+        unicodeGuiScaleEnabled = true;
+        diagnosticLoggingEnabled = true;
+    }
+}
