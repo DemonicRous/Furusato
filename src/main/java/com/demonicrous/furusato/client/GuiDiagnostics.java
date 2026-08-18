@@ -101,6 +101,9 @@ public final class GuiDiagnostics extends GuiScreen {
         int effectiveScale = new ScaledResolution(mc).getScaleFactor();
         boolean unicodeResources = hasUnicodeResources();
         boolean safeMode = FurusatoEarlyConfig.isSafeModeEnabled();
+        boolean configuredPatch = FurusatoEarlyConfig.isUnicodeGuiScaleEnabled();
+        boolean activePatch = FurusatoEarlyConfig.isActiveUnicodeGuiScaleEnabled();
+        boolean restartPending = FurusatoEarlyConfig.isRestartPending();
         List<String> transformers = CompatibilityDiagnostics.transformerClassNames();
         List<String> thirdParty = CompatibilityDiagnostics.thirdPartyTransformerClassNames();
         List<DiagnosticAssessment.Finding> findings = DiagnosticAssessment.assess(
@@ -115,6 +118,13 @@ public final class GuiDiagnostics extends GuiScreen {
         addRow(Category.RENDERING,
                 "furusato.diagnostics.patch", localizeStatus(patchStatus),
                 statusColor(patchStatus));
+        addRow(Category.RENDERING, "furusato.diagnostics.patchConfigured",
+                I18n.format(configuredPatch ? "options.on" : "options.off"), 0xFFFFFF);
+        addRow(Category.RENDERING, "furusato.diagnostics.patchActive",
+                I18n.format(activePatch ? "options.on" : "options.off"), 0xFFFFFF);
+        addRow(Category.OVERVIEW, "furusato.diagnostics.restartPending",
+                I18n.format(restartPending ? "options.on" : "options.off"),
+                restartPending ? 0xFFAA00 : 0x55FF55);
         addRow(Category.COMPATIBILITY, "furusato.diagnostics.safeMode",
                 I18n.format(safeMode ? "options.on" : "options.off"),
                 safeMode ? 0xFFAA00 : 0xAAAAAA);
@@ -150,7 +160,8 @@ public final class GuiDiagnostics extends GuiScreen {
 
         report = buildReport(patchStatus, patch, config, selectedScale,
                 effectiveScale, unicodeResources, safeMode, health, configPath,
-                transformers, thirdParty, findings);
+                transformers, thirdParty, findings, configuredPatch, activePatch,
+                restartPending);
     }
 
     private void addRow(Category category, String labelKey, String value, int color) {
@@ -191,12 +202,16 @@ public final class GuiDiagnostics extends GuiScreen {
             File config, int selectedScale, int effectiveScale,
             boolean unicodeResources, boolean safeMode, String healthKey,
             String configPath, List<String> transformers, List<String> thirdParty,
-            List<DiagnosticAssessment.Finding> findings) {
+            List<DiagnosticAssessment.Finding> findings, boolean configuredPatch,
+            boolean activePatch, boolean restartPending) {
         String detail = patch == null ? "unavailable" : patch.getDetail();
         StringBuilder result = new StringBuilder("Furusato ").append(Furusato.VERSION).append('\n')
                 .append("Minecraft 1.12.2 / Forge ").append(ForgeVersion.getVersion()).append('\n')
                 .append("unicode_gui_scale: ").append(patchStatus).append(" (").append(detail).append(")\n")
                 .append("safeMode: ").append(safeMode).append('\n')
+                .append("unicodeGuiScaleConfigured: ").append(configuredPatch).append('\n')
+                .append("unicodeGuiScaleActive: ").append(activePatch).append('\n')
+                .append("restartPending: ").append(restartPending).append('\n')
                 .append("forceUnicodeFont: ").append(mc.gameSettings.forceUnicodeFont).append('\n')
                 .append("guiScale: ").append(selectedScale).append(" (effective: ").append(effectiveScale).append(")\n")
                 .append("unicodeResources: ").append(unicodeResources).append('\n')

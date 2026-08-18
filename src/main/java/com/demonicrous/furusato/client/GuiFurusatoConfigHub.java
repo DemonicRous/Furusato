@@ -36,7 +36,9 @@ public final class GuiFurusatoConfigHub extends GuiScreen {
         fontSettingsButton = addButton(new GuiResponsiveButton(
                 FONT_SETTINGS, center - 100, height / 2 - 10, 200, 20, ""));
         fontSettingsButton.setFullText(
-                fontRenderer, I18n.format("furusato.config.category.font"));
+                fontRenderer, I18n.format(FurusatoEarlyConfig.isRestartPending()
+                        ? "furusato.config.category.font.restart"
+                        : "furusato.config.category.font"));
         diagnosticsButton = addButton(new GuiResponsiveButton(
                 DIAGNOSTICS, center - 100, height / 2 + 20, 200, 20, ""));
         boolean warning = FurusatoEarlyConfig.isSafeModeEnabled()
