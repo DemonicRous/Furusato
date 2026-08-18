@@ -101,15 +101,8 @@ public final class GuiFontSettings extends GuiScreen {
                 I18n.format(mc.gameSettings.forceUnicodeFont ? "options.on" : "options.off")));
         String configured = I18n.format(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled()
                 ? "options.on" : "options.off");
-        if (FurusatoEarlyConfig.isRestartPending()) {
-            String active = I18n.format(FurusatoEarlyConfig.isActiveUnicodeGuiScaleEnabled()
-                    ? "options.on" : "options.off");
-            patchButton.setFullText(fontRenderer, I18n.format(
-                    "furusato.font.preserveOddScale.pending", configured, active));
-        } else {
-            patchButton.setFullText(fontRenderer, I18n.format(
-                    "furusato.font.preserveOddScale.short", configured));
-        }
+        patchButton.setFullText(fontRenderer, I18n.format(
+                "furusato.font.preserveOddScale.short", configured));
     }
 
     @Override
@@ -131,8 +124,13 @@ public final class GuiFontSettings extends GuiScreen {
                 width / 2, previewTop + 21, 0xFFFFFF);
 
         if (FurusatoEarlyConfig.isRestartPending()) {
+            String active = I18n.format(FurusatoEarlyConfig.isActiveUnicodeGuiScaleEnabled()
+                    ? "options.on" : "options.off");
+            String configured = I18n.format(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled()
+                    ? "options.on" : "options.off");
             drawCenteredLines(fontRenderer.listFormattedStringToWidth(
-                            I18n.format("furusato.font.restartHint"),
+                            I18n.format("furusato.font.restartTransition",
+                                    active, configured),
                             Math.max(40, width - 30)),
                     193, 0xFFAA00);
         }
