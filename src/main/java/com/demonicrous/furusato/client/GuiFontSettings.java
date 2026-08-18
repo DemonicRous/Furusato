@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
 
@@ -188,12 +189,12 @@ public final class GuiFontSettings extends GuiScreen {
         left = Math.max(4, left);
         top = Math.max(5, Math.min(top, height - tooltipHeight - 5));
 
+        RenderHelper.disableStandardItemLighting();
         GlStateManager.disableLighting();
         GlStateManager.disableDepth();
-        drawRect(left - 4, top - 5, left + tooltipWidth + 4,
-                top + tooltipHeight + 5, 0xF0100010);
-        drawRect(left - 3, top - 4, left + tooltipWidth + 3,
-                top + tooltipHeight + 4, 0xF0000010);
+        float previousZLevel = zLevel;
+        zLevel = 300.0F;
+        drawVanillaTooltipBackground(left, top, tooltipWidth, tooltipHeight);
 
         int textY = top;
         for (int paragraphIndex = 0; paragraphIndex < paragraphs.size(); paragraphIndex++) {
@@ -205,8 +206,39 @@ public final class GuiFontSettings extends GuiScreen {
                 textY += paragraphGap;
             }
         }
+        zLevel = previousZLevel;
         GlStateManager.enableDepth();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    /** Matches the background and border used by GuiScreen.drawHoveringText. */
+    private void drawVanillaTooltipBackground(
+            int left, int top, int tooltipWidth, int tooltipHeight) {
+        int background = 0xF0100010;
+        int borderTop = 0x505000FF;
+        int borderBottom = (borderTop & 0xFEFEFE) >> 1
+                | borderTop & 0xFF000000;
+        int right = left + tooltipWidth;
+        int bottom = top + tooltipHeight;
+
+        drawGradientRect(left - 3, top - 4, right + 3, top - 3,
+                background, background);
+        drawGradientRect(left - 3, bottom + 3, right + 3, bottom + 4,
+                background, background);
+        drawGradientRect(left - 3, top - 3, right + 3, bottom + 3,
+                background, background);
+        drawGradientRect(left - 4, top - 3, left - 3, bottom + 3,
+                background, background);
+        drawGradientRect(right + 3, top - 3, right + 4, bottom + 3,
+                background, background);
+        drawGradientRect(left - 3, top - 2, left - 2, bottom + 2,
+                borderTop, borderBottom);
+        drawGradientRect(right + 2, top - 2, right + 3, bottom + 2,
+                borderTop, borderBottom);
+        drawGradientRect(left - 3, top - 3, right + 3, top - 2,
+                borderTop, borderTop);
+        drawGradientRect(left - 3, bottom + 2, right + 3, bottom + 3,
+                borderBottom, borderBottom);
     }
 
     @Override
