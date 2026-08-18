@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.client;
+package com.demonicrous.furusato.client;
 
 import static org.junit.Assert.assertEquals;
 

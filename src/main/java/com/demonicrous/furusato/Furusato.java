@@ -1,23 +1,23 @@
-package com.demonicrous.limecore;
+package com.demonicrous.furusato;
 
-import com.demonicrous.limecore.client.ClientGuiEvents;
+import com.demonicrous.furusato.client.ClientGuiEvents;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 
 @Mod(
-        modid = LimeCore.MOD_ID,
-        name = LimeCore.NAME,
-        version = LimeCore.VERSION,
+        modid = Furusato.MOD_ID,
+        name = Furusato.NAME,
+        version = Furusato.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
         dependencies = "required-after:forge@[14.23.5.2847,)",
-        guiFactory = "com.demonicrous.limecore.client.LimeCoreGuiFactory",
+        guiFactory = "com.demonicrous.furusato.client.FurusatoGuiFactory",
         clientSideOnly = true
 )
-public final class LimeCore {
-    public static final String MOD_ID = "limecore";
-    public static final String NAME = "Lime Core";
+public final class Furusato {
+    public static final String MOD_ID = "furusato";
+    public static final String NAME = "Furusato";
     public static final String VERSION = "@VERSION@";
 
     private static Logger logger;
@@ -30,6 +30,6 @@ public final class LimeCore {
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
         MinecraftForge.EVENT_BUS.register(new ClientGuiEvents());
-        logger.info("Lime Core {} initialized", VERSION);
+        logger.info("Furusato {} initialized", VERSION);
     }
 }

@@ -1,6 +1,6 @@
-package com.demonicrous.limecore.client;
+package com.demonicrous.furusato.client;
 
-import com.demonicrous.limecore.asm.LimeCoreEarlyConfig;
+import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import java.io.IOException;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -62,8 +62,8 @@ public final class GuiFontSettings extends GuiScreen {
             settings.saveOptions();
             refreshLabels();
         } else if (button.id == PRESERVE_ODD_SCALE) {
-            LimeCoreEarlyConfig.setUnicodeGuiScaleEnabled(
-                    !LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled());
+            FurusatoEarlyConfig.setUnicodeGuiScaleEnabled(
+                    !FurusatoEarlyConfig.isUnicodeGuiScaleEnabled());
             refreshLabels();
         } else if (button.id == DONE) {
             settings.saveOptions();
@@ -87,31 +87,31 @@ public final class GuiFontSettings extends GuiScreen {
                 : Integer.toString(selected);
         int effective = new ScaledResolution(mc).getScaleFactor();
         scaleButton.displayString = I18n.format(
-                "limecore.font.guiScale", selectedText, effective);
+                "furusato.font.guiScale", selectedText, effective);
         unicodeButton.displayString = I18n.format(
-                "limecore.font.forceUnicode",
+                "furusato.font.forceUnicode",
                 I18n.format(mc.gameSettings.forceUnicodeFont ? "options.on" : "options.off"));
         patchButton.displayString = I18n.format(
-                "limecore.font.preserveOddScale",
-                I18n.format(LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled()
+                "furusato.font.preserveOddScale",
+                I18n.format(FurusatoEarlyConfig.isUnicodeGuiScaleEnabled()
                         ? "options.on" : "options.off"));
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        drawCenteredString(fontRenderer, I18n.format("limecore.font.title"),
+        drawCenteredString(fontRenderer, I18n.format("furusato.font.title"),
                 width / 2, height / 2 - 90, 0xFFFFFF);
 
         int previewTop = height / 2 + 22;
         drawRect(width / 2 - 100, previewTop, width / 2 + 100,
                 previewTop + 38, 0x88000000);
-        drawCenteredString(fontRenderer, I18n.format("limecore.font.preview"),
+        drawCenteredString(fontRenderer, I18n.format("furusato.font.preview"),
                 width / 2, previewTop + 7, 0xA0A0A0);
-        drawCenteredString(fontRenderer, I18n.format("limecore.font.sample"),
+        drawCenteredString(fontRenderer, I18n.format("furusato.font.sample"),
                 width / 2, previewTop + 21, 0xFFFFFF);
 
-        drawCenteredString(fontRenderer, I18n.format("limecore.font.restartHint"),
+        drawCenteredString(fontRenderer, I18n.format("furusato.font.restartHint"),
                 width / 2, previewTop + 43, 0x808080);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

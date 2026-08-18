@@ -1,8 +1,0 @@
-limecore.font.title=Font Settings
-limecore.font.open=Font Settings
-limecore.font.guiScale=GUI Scale: %s (effective: %s)
-limecore.font.forceUnicode=Force Unicode Font: %s
-limecore.font.preserveOddScale=Preserve Odd Unicode Scale: %s
-limecore.font.preview=Preview
-limecore.font.sample=Lime Core - English / Русский
-limecore.font.restartHint=Restart Minecraft after changing the Unicode scale patch

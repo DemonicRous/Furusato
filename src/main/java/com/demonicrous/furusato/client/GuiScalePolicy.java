@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.client;
+package com.demonicrous.furusato.client;
 
 /** Rules shared by the font settings screen and its tests. */
 public final class GuiScalePolicy {

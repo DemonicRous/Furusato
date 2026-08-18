@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.client;
+package com.demonicrous.furusato.client;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiVideoSettings;
@@ -26,7 +26,7 @@ public final class ClientGuiEvents {
                         button.y,
                         98,
                         20,
-                        net.minecraft.client.resources.I18n.format("limecore.font.open")
+                        net.minecraft.client.resources.I18n.format("furusato.font.open")
                 ));
                 return;
             }

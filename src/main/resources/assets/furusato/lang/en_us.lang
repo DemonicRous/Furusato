@@ -1,0 +1,8 @@
+furusato.font.title=Font Settings
+furusato.font.open=Font Settings
+furusato.font.guiScale=GUI Scale: %s (effective: %s)
+furusato.font.forceUnicode=Force Unicode Font: %s
+furusato.font.preserveOddScale=Preserve Odd Unicode Scale: %s
+furusato.font.preview=Preview
+furusato.font.sample=Furusato - English / Русский
+furusato.font.restartHint=Restart Minecraft after changing the Unicode scale patch

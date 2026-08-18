@@ -1,6 +1,6 @@
-# Lime Core
+# Furusato
 
-Базовый CoreMod для проектов Lime на Minecraft Forge 1.12.2.
+Базовый CoreMod семейства Furusato для Minecraft Forge 1.12.2.
 
 ## Требования
 
@@ -34,7 +34,7 @@
 
 ## Конфигурация
 
-После первого запуска создаётся `config/limecore.properties`:
+После первого запуска создаётся `config/furusato.properties`:
 
 ```properties
 patches.unicodeGuiScale=true
@@ -75,6 +75,9 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 ## Изменения 0.3.0
 
+- Проект полностью переименован из Lime Core в Furusato.
+- Добавлена автоматическая миграция `limecore.properties` в
+  `furusato.properties`.
 - Добавлен локализованный экран Font Settings.
 - Добавлены расширенные значения GUI Scale 1–8 и Auto.
 - Добавлены предпросмотр текста и отображение фактического масштаба.

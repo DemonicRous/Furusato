@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.asm;
+package com.demonicrous.furusato.asm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,7 +21,7 @@ public final class UnicodeGuiScaleTransformerTest {
 
     @Test
     public void replacesUnicodeCheckAndPreservesStackBalance() throws IOException {
-        LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
+        FurusatoEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
         byte[] transformed = new UnicodeGuiScaleTransformer().transform(
                 TARGET,
                 TARGET,
@@ -58,13 +58,13 @@ public final class UnicodeGuiScaleTransformerTest {
     @Test
     public void returnsOriginalClassWhenPatchIsDisabled() throws IOException {
         byte[] original = readClassBytes();
-        LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(false);
+        FurusatoEarlyConfig.setUnicodeGuiScaleEnabledForTests(false);
         try {
             byte[] transformed = new UnicodeGuiScaleTransformer().transform(
                     TARGET, TARGET, original);
             assertSame(original, transformed);
         } finally {
-            LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
+            FurusatoEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
         }
     }
 

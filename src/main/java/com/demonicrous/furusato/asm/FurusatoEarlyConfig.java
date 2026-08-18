@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.asm;
+package com.demonicrous.furusato.asm;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,13 +9,15 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /** Configuration available before normal Forge mod initialization. */
-public final class LimeCoreEarlyConfig {
-    private static final Logger LOGGER = LogManager.getLogger("Lime Core/Config");
+public final class FurusatoEarlyConfig {
+    private static final Logger LOGGER = LogManager.getLogger("Furusato/Config");
     private static final String UNICODE_GUI_SCALE = "patches.unicodeGuiScale";
     private static final String DIAGNOSTIC_LOGGING = "diagnostics.logging";
 
@@ -24,20 +26,32 @@ public final class LimeCoreEarlyConfig {
     private static File configurationFile;
     private static Properties configuration = new Properties();
 
-    private LimeCoreEarlyConfig() {
+    private FurusatoEarlyConfig() {
     }
 
     public static synchronized void load(File gameDirectory) {
         if (gameDirectory == null) {
-            LOGGER.warn("Game directory is unavailable; using Lime Core defaults");
+            LOGGER.warn("Game directory is unavailable; using Furusato defaults");
             return;
         }
 
-        File file = new File(new File(gameDirectory, "config"), "limecore.properties");
+        File configDirectory = new File(gameDirectory, "config");
+        File file = new File(configDirectory, "furusato.properties");
+        File legacyFile = new File(configDirectory, "limecore.properties");
         Properties properties = new Properties();
         boolean changed = false;
 
         try {
+            if (!file.isFile() && legacyFile.isFile()) {
+                if (!configDirectory.isDirectory() && !configDirectory.mkdirs()) {
+                    throw new IOException("Could not create configuration directory: "
+                            + configDirectory);
+                }
+                Files.copy(legacyFile.toPath(), file.toPath(),
+                        StandardCopyOption.COPY_ATTRIBUTES);
+                LOGGER.info("Migrated legacy configuration from {} to {}",
+                        legacyFile.getName(), file.getName());
+            }
             if (file.isFile()) {
                 try (Reader reader = new InputStreamReader(
                         new FileInputStream(file), StandardCharsets.UTF_8)) {
@@ -60,7 +74,7 @@ public final class LimeCoreEarlyConfig {
         } catch (IOException error) {
             unicodeGuiScaleEnabled = true;
             diagnosticLoggingEnabled = true;
-            LOGGER.error("Could not load {}; using Lime Core defaults", file, error);
+            LOGGER.error("Could not load {}; using Furusato defaults", file, error);
         }
     }
 
@@ -118,7 +132,7 @@ public final class LimeCoreEarlyConfig {
         }
         try (Writer writer = new OutputStreamWriter(
                 new FileOutputStream(file), StandardCharsets.UTF_8)) {
-            properties.store(writer, "Lime Core early configuration");
+            properties.store(writer, "Furusato early configuration");
         }
     }
 

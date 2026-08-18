@@ -1,4 +1,4 @@
-package com.demonicrous.limecore.asm;
+package com.demonicrous.furusato.asm;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 /** Preserves an odd GUI scale when Minecraft uses its Unicode font renderer. */
 public final class UnicodeGuiScaleTransformer implements IClassTransformer {
-    private static final Logger LOGGER = LogManager.getLogger("Lime Core/ASM");
+    private static final Logger LOGGER = LogManager.getLogger("Furusato/ASM");
     private static final String PATCH = "unicode_gui_scale";
     private static final String DEOBF_TARGET = "net.minecraft.client.gui.ScaledResolution";
     private static final String OBF_TARGET = "bit";
@@ -30,7 +30,7 @@ public final class UnicodeGuiScaleTransformer implements IClassTransformer {
             return basicClass;
         }
 
-        if (!LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled()) {
+        if (!FurusatoEarlyConfig.isUnicodeGuiScaleEnabled()) {
             PatchDiagnostics.disabled(PATCH);
             LOGGER.info("Unicode GUI-scale patch is disabled");
             return basicClass;
