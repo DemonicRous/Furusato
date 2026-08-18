@@ -160,18 +160,58 @@ public final class GuiDiagnostics extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
+        int contentWidth = Math.min(620, Math.max(280, width - 32));
+        int contentLeft = (width - contentWidth) / 2;
+        int contentRight = contentLeft + contentWidth;
+        int rowHeight = 16;
+        int panelHeight = rows.size() * rowHeight + 16;
+        int groupHeight = panelHeight + 25;
+        int groupTop = Math.max(10, (height - 60 - groupHeight) / 2);
+        int panelTop = groupTop + 25;
+
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
-                width / 2, 16, 0xFFFFFF);
-        int top = 38;
-        int maxValueWidth = Math.max(80, width / 2 - 24);
+                width / 2, groupTop, 0xFFFFFF);
+
+        drawRect(contentLeft - 2, panelTop - 2, contentRight + 2,
+                panelTop + panelHeight + 2, 0x88000000);
+        drawRect(contentLeft, panelTop, contentRight,
+                panelTop + panelHeight, 0x66000000);
+
+        int labelWidth = 0;
+        for (Row row : rows) {
+            labelWidth = Math.max(labelWidth,
+                    fontRenderer.getStringWidth(row.label + ":"));
+        }
+        labelWidth = Math.min(labelWidth, contentWidth / 2 - 12);
+        int labelX = contentLeft + 10;
+        int valueX = labelX + labelWidth + 18;
+        int maxValueWidth = Math.max(60, contentRight - valueX - 10);
+
         for (int index = 0; index < rows.size(); index++) {
             Row row = rows.get(index);
-            int y = top + index * 14;
-            drawString(fontRenderer, row.label + ":", 14, y, 0xA0A0A0);
-            String value = fontRenderer.trimStringToWidth(row.value, maxValueWidth);
-            drawString(fontRenderer, value, width / 2, y, row.color);
+            int rowTop = panelTop + 8 + index * rowHeight;
+            if (mouseX >= contentLeft && mouseX < contentRight
+                    && mouseY >= rowTop - 3 && mouseY < rowTop + rowHeight - 3) {
+                drawRect(contentLeft + 2, rowTop - 3, contentRight - 2,
+                        rowTop + rowHeight - 3, 0x22FFFFFF);
+            } else if ((index & 1) == 1) {
+                drawRect(contentLeft + 2, rowTop - 3, contentRight - 2,
+                        rowTop + rowHeight - 3, 0x10000000);
+            }
+            drawString(fontRenderer, row.label + ":", labelX, rowTop, 0xA0A0A0);
+            drawString(fontRenderer, fitText(row.value, maxValueWidth),
+                    valueX, rowTop, row.color);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    private String fitText(String text, int maxWidth) {
+        if (fontRenderer.getStringWidth(text) <= maxWidth) {
+            return text;
+        }
+        String ellipsis = "...";
+        int available = Math.max(0, maxWidth - fontRenderer.getStringWidth(ellipsis));
+        return fontRenderer.trimStringToWidth(text, available) + ellipsis;
     }
 
     @Override
