@@ -2,6 +2,7 @@ package com.demonicrous.furusato.asm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 import org.junit.After;
@@ -31,5 +32,15 @@ public final class PatchDiagnosticsTest {
         assertEquals("APPLIED", after.get("unicode_gui_scale").getStatus());
         assertEquals("patched", after.get("unicode_gui_scale").getDetail());
         assertFalse(before == after);
+    }
+
+    @Test
+    public void safeModeIsReportedAsAWarning() {
+        PatchDiagnostics.register("unicode_gui_scale");
+        PatchDiagnostics.safeMode("unicode_gui_scale");
+
+        assertEquals("SAFE_MODE", PatchDiagnostics.snapshot()
+                .get("unicode_gui_scale").getStatus());
+        assertTrue(PatchDiagnostics.hasWarnings());
     }
 }

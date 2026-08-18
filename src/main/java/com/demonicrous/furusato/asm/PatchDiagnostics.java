@@ -27,6 +27,10 @@ public final class PatchDiagnostics {
         update(patch, "DISABLED", "disabled by configuration");
     }
 
+    public static synchronized void safeMode(String patch) {
+        update(patch, "SAFE_MODE", "disabled by -Dfurusato.safeMode=true");
+    }
+
     public static synchronized void skipped(String patch, String detail) {
         update(patch, "SKIPPED", detail);
     }
@@ -39,6 +43,16 @@ public final class PatchDiagnostics {
     /** Returns an immutable-in-practice copy safe for client GUI inspection. */
     public static synchronized Map<String, Result> snapshot() {
         return new LinkedHashMap<String, Result>(RESULTS);
+    }
+
+    public static synchronized boolean hasWarnings() {
+        for (Result result : RESULTS.values()) {
+            if ("FAILED".equals(result.status) || "SKIPPED".equals(result.status)
+                    || "SAFE_MODE".equals(result.status)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void update(String patch, String status, String detail) {

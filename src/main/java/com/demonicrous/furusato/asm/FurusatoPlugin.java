@@ -12,6 +12,10 @@ public final class FurusatoPlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
         PatchDiagnostics.register("unicode_gui_scale");
+        if (FurusatoEarlyConfig.isSafeModeEnabled()) {
+            PatchDiagnostics.safeMode("unicode_gui_scale");
+            return new String[0];
+        }
         return new String[] {
                 UnicodeGuiScaleTransformer.class.getName()
         };

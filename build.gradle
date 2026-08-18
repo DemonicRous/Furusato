@@ -31,6 +31,9 @@ minecraft {
 
 runClient {
     jvmArgs '-Dfml.coreMods.load=com.demonicrous.furusato.asm.FurusatoPlugin'
+    if (System.getProperty('furusato.safeMode') != null) {
+        jvmArgs "-Dfurusato.safeMode=${System.getProperty('furusato.safeMode')}"
+    }
 }
 
 dependencies {
