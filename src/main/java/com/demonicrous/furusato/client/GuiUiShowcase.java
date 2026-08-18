@@ -16,11 +16,10 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
     private static final int SAMPLE_ROWS = 8;
 
     private final GuiScreen parentScreen;
-    private boolean toggleEnabled = true;
     private final SmoothScrollState scroll = new SmoothScrollState();
     private final GuiFurusatoScrollBar scrollBar = new GuiFurusatoScrollBar(scroll);
     private long lastFrameNanos = System.nanoTime();
-    private GuiResponsiveButton toggleButton;
+    private GuiFurusatoToggle toggleButton;
     private GuiFurusatoSlider slider;
 
     public GuiUiShowcase(GuiScreen parentScreen) {
@@ -33,8 +32,8 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
         int panelWidth = responsiveContentWidth(280, 420, 16);
         int left = (width - panelWidth) / 2;
         int top = Math.max(20, (height - 224) / 2);
-        toggleButton = addButton(new GuiResponsiveButton(
-                TOGGLE, left + 14, top + 48, panelWidth - 28, 20, ""));
+        toggleButton = addButton(new GuiFurusatoToggle(
+                TOGGLE, left + 14, top + 48, panelWidth - 28, true));
         slider = addButton(new GuiFurusatoSlider(
                 SLIDER, left + 14, top + 82, panelWidth - 28, 0.65D));
         addButton(new GuiButton(DONE, width / 2 - 100,
@@ -43,15 +42,14 @@ public final class GuiUiShowcase extends GuiFurusatoScreen {
     }
 
     private void refreshToggle() {
-        toggleButton.setFullText(fontRenderer, I18n.format(
-                "furusato.ui.toggle", I18n.format(toggleEnabled
-                        ? "options.on" : "options.off")));
+        toggleButton.displayString = I18n.format(
+                "furusato.ui.toggle", I18n.format(toggleButton.getValue()
+                        ? "options.on" : "options.off"));
     }
 
     @Override
     protected void actionPerformed(GuiButton button) throws IOException {
         if (button.id == TOGGLE) {
-            toggleEnabled = !toggleEnabled;
             refreshToggle();
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);

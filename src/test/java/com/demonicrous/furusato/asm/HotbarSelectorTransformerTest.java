@@ -28,6 +28,7 @@ public final class HotbarSelectorTransformerTest {
         ClassNode node = new ClassNode();
         new ClassReader(transformed).accept(node, 0);
         int helperCalls = 0;
+        int deferredDraws = 0;
         for (MethodNode method : node.methods) {
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
                 if (instruction instanceof MethodInsnNode) {
@@ -35,11 +36,15 @@ public final class HotbarSelectorTransformerTest {
                     if (HELPER.equals(call.owner)
                             && "adjustSelectorX".equals(call.name)) {
                         helperCalls++;
+                    } else if (HELPER.equals(call.owner)
+                            && "deferSelector".equals(call.name)) {
+                        deferredDraws++;
                     }
                 }
             }
         }
         assertEquals(1, helperCalls);
+        assertEquals(1, deferredDraws);
     }
 
     private static byte[] readClass(String resource) throws IOException {

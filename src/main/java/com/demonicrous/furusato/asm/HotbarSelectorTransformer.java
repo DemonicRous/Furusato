@@ -44,6 +44,15 @@ public final class HotbarSelectorTransformer implements IClassTransformer {
                             method.instructions.insert(add, new MethodInsnNode(
                                     Opcodes.INVOKESTATIC, HELPER,
                                     "adjustSelectorX", "(I)I", false));
+                            MethodInsnNode draw = findSelectorDraw(add);
+                            if (draw == null) {
+                                continue;
+                            }
+                            draw.setOpcode(Opcodes.INVOKESTATIC);
+                            draw.owner = HELPER;
+                            draw.name = "deferSelector";
+                            draw.desc = "(Lnet/minecraft/client/gui/Gui;IIIIII)V";
+                            draw.itf = false;
                             matches++;
                         }
                     }
@@ -88,5 +97,17 @@ public final class HotbarSelectorTransformer implements IClassTransformer {
             next = next.getNext();
         }
         return next;
+    }
+
+    private static MethodInsnNode findSelectorDraw(AbstractInsnNode start) {
+        AbstractInsnNode current = start;
+        for (int remaining = 32; remaining > 0 && current != null; remaining--) {
+            current = nextReal(current);
+            if (current instanceof MethodInsnNode
+                    && "(IIIIII)V".equals(((MethodInsnNode) current).desc)) {
+                return (MethodInsnNode) current;
+            }
+        }
+        return null;
     }
 }

@@ -2,6 +2,7 @@ package com.demonicrous.furusato;
 
 import com.demonicrous.furusato.client.ClientGuiEvents;
 import com.demonicrous.furusato.client.ContainerAnimationEvents;
+import com.demonicrous.furusato.client.HotbarAnimationEvents;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -32,6 +33,7 @@ public final class Furusato {
         logger = event.getModLog();
         MinecraftForge.EVENT_BUS.register(new ClientGuiEvents());
         MinecraftForge.EVENT_BUS.register(new ContainerAnimationEvents());
+        MinecraftForge.EVENT_BUS.register(new HotbarAnimationEvents());
         logger.info("Furusato {} initialized", VERSION);
     }
 }
