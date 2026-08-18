@@ -20,31 +20,28 @@ public final class PatchDiagnostics {
     }
 
     public static synchronized void applied(String patch, String detail) {
-        RESULTS.put(patch, new Result("APPLIED", detail));
+        update(patch, "APPLIED", detail);
     }
 
     public static synchronized void disabled(String patch) {
-        RESULTS.put(patch, new Result("DISABLED", "disabled by configuration"));
+        update(patch, "DISABLED", "disabled by configuration");
     }
 
     public static synchronized void skipped(String patch, String detail) {
-        RESULTS.put(patch, new Result("SKIPPED", detail));
+        update(patch, "SKIPPED", detail);
     }
 
     public static synchronized void failed(String patch, Throwable error) {
-        RESULTS.put(patch, new Result("FAILED", error.getClass().getSimpleName()
-                + ": " + String.valueOf(error.getMessage())));
+        update(patch, "FAILED", error.getClass().getSimpleName()
+                + ": " + String.valueOf(error.getMessage()));
     }
 
-    public static synchronized void logSummary() {
+    private static void update(String patch, String status, String detail) {
+        RESULTS.put(patch, new Result(status, detail));
         if (!LimeCoreEarlyConfig.isDiagnosticLoggingEnabled()) {
             return;
         }
-        LOGGER.info("Lime Core patch diagnostics:");
-        for (Map.Entry<String, Result> entry : RESULTS.entrySet()) {
-            LOGGER.info("  {}: {} ({})", entry.getKey(),
-                    entry.getValue().status, entry.getValue().detail);
-        }
+        LOGGER.info("{}: {} ({})", patch, status, detail);
     }
 
     private static final class Result {
@@ -57,4 +54,3 @@ public final class PatchDiagnostics {
         }
     }
 }
-
