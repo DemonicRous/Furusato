@@ -10,7 +10,9 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 public final class LimeCorePlugin implements IFMLLoadingPlugin {
     @Override
     public String[] getASMTransformerClass() {
-        return new String[0];
+        return new String[] {
+                UnicodeGuiScaleTransformer.class.getName()
+        };
     }
 
     @Override
@@ -32,4 +34,3 @@ public final class LimeCorePlugin implements IFMLLoadingPlugin {
         return null;
     }
 }
-
