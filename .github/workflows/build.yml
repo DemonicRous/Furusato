@@ -31,7 +31,10 @@ jobs:
           jar_path="$(find build/libs -maxdepth 1 -name 'Furusato-*.jar' ! -name '*sources*' -print -quit)"
           test -n "$jar_path"
           javap -classpath "$jar_path" -c -p com.demonicrous.furusato.client.ClientGuiEvents > build/client-gui-events.bytecode.txt
+          javap -classpath "$jar_path" -c -p com.demonicrous.furusato.client.GuiDiagnostics > build/gui-diagnostics.bytecode.txt
           grep -q 'field_146294_l' build/client-gui-events.bytecode.txt
+          grep -q 'field_71443_c' build/gui-diagnostics.bytecode.txt
+          grep -q 'field_71440_d' build/gui-diagnostics.bytecode.txt
           if grep -q 'GuiScreen.width' build/client-gui-events.bytecode.txt; then
             echo 'Production JAR still contains deobfuscated Minecraft fields'
             exit 1

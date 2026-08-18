@@ -55,25 +55,42 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         buttonList.clear();
         refreshDiagnostics();
         int center = width / 2;
-        int contentWidth = responsiveContentWidth(280, 620, 16);
+        boolean compact = isCompactLayout();
+        int contentWidth = responsiveContentWidth(280, compact ? 420 : 620, 12);
         int contentLeft = (width - contentWidth) / 2;
-        int panelHeight = panelHeight();
-        int groupHeight = panelHeight + 46;
+        int headerHeight = compact ? 70 : 46;
+        int panelHeight = panelHeight(headerHeight);
+        int groupHeight = panelHeight + headerHeight;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
         int tabTop = groupTop + 20;
         int gap = 4;
-        int tabWidth = (contentWidth - gap * 3) / 4;
-        addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
-                contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
-        addCategoryButton(RENDERING_TAB, Category.RENDERING,
-                contentLeft + tabWidth + gap, tabTop, tabWidth,
-                "furusato.diagnostics.tab.rendering");
-        addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
-                contentLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
-                "furusato.diagnostics.tab.compatibility");
-        addCategoryButton(ISSUES_TAB, Category.ISSUES,
-                contentLeft + (tabWidth + gap) * 3, tabTop, tabWidth,
-                "furusato.diagnostics.tab.issues");
+        if (compact) {
+            int tabWidth = (contentWidth - gap) / 2;
+            addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
+                    contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
+            addCategoryButton(RENDERING_TAB, Category.RENDERING,
+                    contentLeft + tabWidth + gap, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.rendering");
+            addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
+                    contentLeft, tabTop + 24, tabWidth,
+                    "furusato.diagnostics.tab.compatibility");
+            addCategoryButton(ISSUES_TAB, Category.ISSUES,
+                    contentLeft + tabWidth + gap, tabTop + 24, tabWidth,
+                    "furusato.diagnostics.tab.issues");
+        } else {
+            int tabWidth = (contentWidth - gap * 3) / 4;
+            addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
+                    contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
+            addCategoryButton(RENDERING_TAB, Category.RENDERING,
+                    contentLeft + tabWidth + gap, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.rendering");
+            addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
+                    contentLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.compatibility");
+            addCategoryButton(ISSUES_TAB, Category.ISSUES,
+                    contentLeft + (tabWidth + gap) * 3, tabTop, tabWidth,
+                    "furusato.diagnostics.tab.issues");
+        }
         addButton(new GuiResponsiveButton(COPY_REPORT, center - 151, height - 51, 98, 20,
                 I18n.format(copyLabelKey)));
         addButton(new GuiResponsiveButton(EXPORT_REPORT, center - 49, height - 51, 98, 20,
@@ -345,20 +362,27 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        int contentWidth = responsiveContentWidth(280, 620, 16);
+        boolean compact = isCompactLayout();
+        int contentWidth = responsiveContentWidth(280, compact ? 420 : 620, 12);
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int panelHeight = panelHeight();
-        int groupHeight = panelHeight + 46;
+        int headerHeight = compact ? 70 : 46;
+        int panelHeight = panelHeight(headerHeight);
+        int groupHeight = panelHeight + headerHeight;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
-        int panelTop = groupTop + 46;
+        int panelTop = groupTop + headerHeight;
+
+        drawFurusatoPanel(contentLeft + 6, groupTop + 6,
+                contentWidth - 12, groupHeight - 12);
 
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);
 
-        drawFurusatoPanel(contentLeft + 6, panelTop + 6,
-                contentWidth - 12, panelHeight - 12);
+        drawRect(contentLeft + 6, panelTop + 2,
+                contentRight - 6, panelTop + panelHeight - 6, 0x70000000);
+        drawRect(contentLeft + 6, panelTop + 2,
+                contentRight - 6, panelTop + 3, 0x505000FF);
 
         List<Row> visibleRows = visibleRows();
         int capacity = FurusatoGuiLayout.visibleRows(
@@ -407,11 +431,16 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         }
     }
 
-    private int panelHeight() {
+    private int panelHeight(int headerHeight) {
         int desired = Math.max(4, visibleRows().size()) * 14 + PANEL_PADDING * 2;
         int footerTop = height - 51;
-        int available = Math.max(34, footerTop - 54 - 8);
+        int available = Math.max(34, footerTop - 8 - headerHeight);
         return Math.min(desired, available);
+    }
+
+    private boolean isCompactLayout() {
+        return FurusatoViewport.isCompact(width, height,
+                mc.displayWidth, mc.displayHeight);
     }
 
     private void drawScrollBar(int contentRight, int panelTop, int panelHeight,
@@ -436,8 +465,9 @@ public final class GuiDiagnostics extends GuiFurusatoScreen {
         int wheel = Mouse.getEventDWheel();
         if (wheel != 0) {
             scrollOffset += wheel < 0 ? 1 : -1;
+            int headerHeight = isCompactLayout() ? 70 : 46;
             int capacity = FurusatoGuiLayout.visibleRows(
-                    panelHeight(), PANEL_PADDING, 14);
+                    panelHeight(headerHeight), PANEL_PADDING, 14);
             scrollOffset = FurusatoGuiLayout.clampScroll(
                     scrollOffset, visibleRows().size(), capacity);
         }
