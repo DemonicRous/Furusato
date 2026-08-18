@@ -4,7 +4,7 @@ package com.demonicrous.furusato.client;
 public final class GuiScalePolicy {
     public static final int AUTO = 0;
     public static final int MIN_MANUAL = 1;
-    public static final int MAX_MANUAL = 8;
+    public static final int MAX_MANUAL = 3;
 
     private GuiScalePolicy() {
     }
@@ -15,24 +15,8 @@ public final class GuiScalePolicy {
     }
 
     public static int next(int value) {
-        return next(value, MAX_MANUAL);
-    }
-
-    public static int next(int value, int maximum) {
         int normalized = normalize(value);
-        int cappedMaximum = Math.max(MIN_MANUAL, Math.min(MAX_MANUAL, maximum));
-        return normalized >= cappedMaximum ? AUTO : normalized + 1;
-    }
-
-    /** Mirrors ScaledResolution's minimum logical size constraint. */
-    public static int maximumForDimensions(int displayWidth, int displayHeight) {
-        int maximum = MIN_MANUAL;
-        while (maximum < MAX_MANUAL
-                && displayWidth / (maximum + 1) >= 320
-                && displayHeight / (maximum + 1) >= 240) {
-            maximum++;
-        }
-        return maximum;
+        return normalized >= MAX_MANUAL ? AUTO : normalized + 1;
     }
 
     public static int normalize(int value) {
