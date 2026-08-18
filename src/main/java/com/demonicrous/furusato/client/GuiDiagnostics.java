@@ -25,8 +25,6 @@ public final class GuiDiagnostics extends GuiScreen {
     private final List<Row> rows = new ArrayList<Row>();
     private String report = "";
     private String copyLabelKey = "furusato.diagnostics.copy";
-    private float[] rowHoverProgress = new float[0];
-    private long lastAnimationTime;
 
     public GuiDiagnostics(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -36,8 +34,6 @@ public final class GuiDiagnostics extends GuiScreen {
     public void initGui() {
         buttonList.clear();
         refreshDiagnostics();
-        rowHoverProgress = new float[rows.size()];
-        lastAnimationTime = mc.getSystemTime();
         int center = width / 2;
         addButton(new GuiButton(COPY_REPORT, center - 100, height - 51, 200, 20,
                 I18n.format(copyLabelKey)));
@@ -176,10 +172,8 @@ public final class GuiDiagnostics extends GuiScreen {
         drawCenteredString(fontRenderer, I18n.format("furusato.diagnostics.title"),
                 width / 2, groupTop, 0xFFFFFF);
 
-        drawRect(contentLeft - 2, panelTop - 2, contentRight + 2,
-                panelTop + panelHeight + 2, 0x88000000);
-        drawRect(contentLeft, panelTop, contentRight,
-                panelTop + panelHeight, 0x66000000);
+        drawTooltipStylePanel(contentLeft + 6, panelTop + 6,
+                contentWidth - 12, panelHeight - 12);
 
         int labelWidth = 0;
         for (Row row : rows) {
@@ -190,9 +184,6 @@ public final class GuiDiagnostics extends GuiScreen {
         int labelX = contentLeft + 10;
         int valueX = labelX + labelWidth + 18;
         int maxValueWidth = Math.max(60, contentRight - valueX - 10);
-        updateHoverAnimation(mouseX, mouseY, contentLeft, contentRight,
-                panelTop, rowHeight);
-
         for (int index = 0; index < rows.size(); index++) {
             Row row = rows.get(index);
             int rowTop = panelTop + 8 + index * rowHeight;
@@ -200,14 +191,12 @@ public final class GuiDiagnostics extends GuiScreen {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
                         rowTop + rowHeight, 0x10000000);
             }
-            float easedHover = smoothStep(rowHoverProgress[index]);
-            if (easedHover > 0.0F) {
-                int alpha = Math.max(1, Math.min(0x22,
-                        Math.round(0x22 * easedHover)));
+            if (mouseX >= contentLeft && mouseX < contentRight
+                    && mouseY >= rowTop && mouseY < rowTop + rowHeight) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
-                        rowTop + rowHeight, alpha << 24 | 0xFFFFFF);
+                        rowTop + rowHeight, 0x22FFFFFF);
             }
-            int textY = rowTop + (rowHeight - fontRenderer.FONT_HEIGHT) / 2;
+            int textY = rowTop + (rowHeight - fontRenderer.FONT_HEIGHT) / 2 + 1;
             drawString(fontRenderer, row.label + ":", labelX, textY, 0xA0A0A0);
             drawString(fontRenderer, fitText(row.value, maxValueWidth),
                     valueX, textY, row.color);
@@ -215,29 +204,39 @@ public final class GuiDiagnostics extends GuiScreen {
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
-    private void updateHoverAnimation(int mouseX, int mouseY, int contentLeft,
-            int contentRight, int panelTop, int rowHeight) {
-        long now = mc.getSystemTime();
-        long elapsed = Math.max(0L, Math.min(100L, now - lastAnimationTime));
-        lastAnimationTime = now;
-        float step = elapsed / 500.0F;
-        for (int index = 0; index < rowHoverProgress.length; index++) {
-            int rowTop = panelTop + 8 + index * rowHeight;
-            boolean hovered = mouseX >= contentLeft && mouseX < contentRight
-                    && mouseY >= rowTop && mouseY < rowTop + rowHeight;
-            float target = hovered ? 1.0F : 0.0F;
-            if (rowHoverProgress[index] < target) {
-                rowHoverProgress[index] = Math.min(target,
-                        rowHoverProgress[index] + step);
-            } else if (rowHoverProgress[index] > target) {
-                rowHoverProgress[index] = Math.max(target,
-                        rowHoverProgress[index] - step);
-            }
-        }
-    }
+    /** Same background, border colors and padding as Furusato's tooltips. */
+    private void drawTooltipStylePanel(
+            int left, int top, int panelWidth, int panelHeight) {
+        int background = 0xF0100010;
+        int borderTop = 0x505000FF;
+        int borderBottom = (borderTop & 0xFEFEFE) >> 1
+                | borderTop & 0xFF000000;
+        int right = left + panelWidth;
+        int bottom = top + panelHeight;
+        int padding = 2;
+        int boxLeft = left - 4 - padding;
+        int boxTop = top - 4 - padding;
+        int boxRight = right + 4 + padding;
+        int boxBottom = bottom + 4 + padding;
 
-    private float smoothStep(float value) {
-        return value * value * (3.0F - 2.0F * value);
+        drawGradientRect(boxLeft + 1, boxTop, boxRight - 1, boxTop + 1,
+                background, background);
+        drawGradientRect(boxLeft + 1, boxBottom - 1, boxRight - 1, boxBottom,
+                background, background);
+        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxBottom - 1,
+                background, background);
+        drawGradientRect(boxLeft, boxTop + 1, boxLeft + 1, boxBottom - 1,
+                background, background);
+        drawGradientRect(boxRight - 1, boxTop + 1, boxRight, boxBottom - 1,
+                background, background);
+        drawGradientRect(boxLeft + 1, boxTop + 2, boxLeft + 2, boxBottom - 2,
+                borderTop, borderBottom);
+        drawGradientRect(boxRight - 2, boxTop + 2, boxRight - 1, boxBottom - 2,
+                borderTop, borderBottom);
+        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxTop + 2,
+                borderTop, borderTop);
+        drawGradientRect(boxLeft + 1, boxBottom - 2, boxRight - 1, boxBottom - 1,
+                borderBottom, borderBottom);
     }
 
     private String fitText(String text, int maxWidth) {
