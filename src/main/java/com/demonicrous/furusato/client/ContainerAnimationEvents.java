@@ -27,8 +27,8 @@ public final class ContainerAnimationEvents {
     }
 
     @SubscribeEvent
-    public void beforeDraw(GuiScreenEvent.DrawScreenEvent.Pre event) {
-        if (event.getGui() != animatedScreen) {
+    public void afterBackground(GuiScreenEvent.BackgroundDrawnEvent event) {
+        if (event.getGui() != animatedScreen || matrixPushed) {
             return;
         }
         float offset = currentOffset();
