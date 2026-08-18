@@ -111,6 +111,7 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 - Добавлен безопасный запуск без ASM-патчей через
   `-Dfurusato.safeMode=true`.
+- Для Gradle/PowerShell используется `-PfurusatoSafeMode=true`.
 - Хаб отмечает диагностическую категорию при реальной проблеме или safe mode.
 - Диагностика показывает число сторонних LaunchWrapper-трансформеров, а
   полный список включает в технический отчёт.

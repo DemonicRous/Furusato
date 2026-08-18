@@ -39,9 +39,13 @@ public final class CompatibilityDiagnostics {
     }
 
     private static boolean isPlatformOrFurusatoTransformer(String name) {
-        return name.startsWith("com.demonicrous.furusato.")
-                || name.startsWith("net.minecraftforge.")
-                || name.startsWith("net.minecraft.")
-                || name.startsWith("cpw.mods.");
+        String normalized = name;
+        while (normalized.startsWith("$wrapper.")) {
+            normalized = normalized.substring("$wrapper.".length());
+        }
+        return normalized.startsWith("com.demonicrous.furusato.")
+                || normalized.startsWith("net.minecraftforge.")
+                || normalized.startsWith("net.minecraft.")
+                || normalized.startsWith("cpw.mods.");
     }
 }

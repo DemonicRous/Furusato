@@ -12,8 +12,10 @@ public final class CompatibilityDiagnosticsTest {
         List<String> result = CompatibilityDiagnostics.thirdPartyTransformerClassNames(
                 Arrays.asList(
                         "net.minecraftforge.fml.common.asm.ForgeTransformer",
+                        "$wrapper.net.minecraftforge.fml.common.asm.SideTransformer",
                         "net.minecraft.launchwrapper.VanillaTransformer",
                         "com.demonicrous.furusato.asm.UnicodeGuiScaleTransformer",
+                        "$wrapper.com.demonicrous.furusato.asm.UnicodeGuiScaleTransformer",
                         "example.optimization.CustomTransformer"));
 
         assertEquals(Arrays.asList("example.optimization.CustomTransformer"), result);
