@@ -1,5 +1,7 @@
 package com.demonicrous.limecore;
 
+import com.demonicrous.limecore.client.ClientGuiEvents;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +29,7 @@ public final class LimeCore {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
+        MinecraftForge.EVENT_BUS.register(new ClientGuiEvents());
         logger.info("Lime Core {} initialized", VERSION);
     }
 }

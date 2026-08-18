@@ -21,11 +21,13 @@ public final class LimeCoreEarlyConfig {
 
     private static volatile boolean unicodeGuiScaleEnabled = true;
     private static volatile boolean diagnosticLoggingEnabled = true;
+    private static File configurationFile;
+    private static Properties configuration = new Properties();
 
     private LimeCoreEarlyConfig() {
     }
 
-    public static void load(File gameDirectory) {
+    public static synchronized void load(File gameDirectory) {
         if (gameDirectory == null) {
             LOGGER.warn("Game directory is unavailable; using Lime Core defaults");
             return;
@@ -45,6 +47,8 @@ public final class LimeCoreEarlyConfig {
 
             unicodeGuiScaleEnabled = readBoolean(properties, UNICODE_GUI_SCALE, true);
             diagnosticLoggingEnabled = readBoolean(properties, DIAGNOSTIC_LOGGING, true);
+            configurationFile = file;
+            configuration = properties;
 
             changed |= putDefault(properties, UNICODE_GUI_SCALE, unicodeGuiScaleEnabled);
             changed |= putDefault(properties, DIAGNOSTIC_LOGGING, diagnosticLoggingEnabled);
@@ -66,6 +70,22 @@ public final class LimeCoreEarlyConfig {
 
     public static boolean isDiagnosticLoggingEnabled() {
         return diagnosticLoggingEnabled;
+    }
+
+    public static synchronized boolean setUnicodeGuiScaleEnabled(boolean enabled) {
+        unicodeGuiScaleEnabled = enabled;
+        configuration.setProperty(UNICODE_GUI_SCALE, Boolean.toString(enabled));
+        if (configurationFile == null) {
+            LOGGER.warn("Cannot save Unicode GUI-scale setting before configuration is loaded");
+            return false;
+        }
+        try {
+            save(configurationFile, configuration);
+            return true;
+        } catch (IOException error) {
+            LOGGER.error("Could not save {}", configurationFile, error);
+            return false;
+        }
     }
 
     private static boolean readBoolean(Properties properties, String key, boolean fallback) {
@@ -109,5 +129,7 @@ public final class LimeCoreEarlyConfig {
     static void resetForTests() {
         unicodeGuiScaleEnabled = true;
         diagnosticLoggingEnabled = true;
+        configurationFile = null;
+        configuration = new Properties();
     }
 }

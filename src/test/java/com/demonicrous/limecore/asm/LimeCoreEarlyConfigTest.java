@@ -49,4 +49,16 @@ public final class LimeCoreEarlyConfigTest {
         assertFalse(LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled());
         assertFalse(LimeCoreEarlyConfig.isDiagnosticLoggingEnabled());
     }
+
+    @Test
+    public void persistsUnicodePatchSettingFromGui() throws Exception {
+        File gameDirectory = temporaryFolder.newFolder("save");
+        LimeCoreEarlyConfig.load(gameDirectory);
+
+        assertTrue(LimeCoreEarlyConfig.setUnicodeGuiScaleEnabled(false));
+        LimeCoreEarlyConfig.resetForTests();
+        LimeCoreEarlyConfig.load(gameDirectory);
+
+        assertFalse(LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled());
+    }
 }
