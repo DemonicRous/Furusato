@@ -4,12 +4,15 @@ import com.demonicrous.furusato.Furusato;
 import com.demonicrous.furusato.asm.CompatibilityDiagnostics;
 import com.demonicrous.furusato.asm.FurusatoEarlyConfig;
 import com.demonicrous.furusato.asm.PatchDiagnostics;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,9 +27,11 @@ import net.minecraftforge.common.ForgeVersion;
 public final class GuiDiagnostics extends GuiScreen {
     private static final int COPY_REPORT = 10;
     private static final int EXPORT_REPORT = 11;
+    private static final int OPEN_REPORTS = 12;
     private static final int OVERVIEW_TAB = 20;
     private static final int RENDERING_TAB = 21;
     private static final int COMPATIBILITY_TAB = 22;
+    private static final int ISSUES_TAB = 23;
     private static final int DONE = 200;
     private static final int PANEL_PADDING = 10;
     private static final String UNICODE_PATCH = "unicode_gui_scale";
@@ -36,6 +41,7 @@ public final class GuiDiagnostics extends GuiScreen {
     private String report = "";
     private String copyLabelKey = "furusato.diagnostics.copy";
     private String exportLabelKey = "furusato.diagnostics.export";
+    private String openLabelKey = "furusato.diagnostics.openFolder";
     private Category activeCategory = Category.OVERVIEW;
 
     public GuiDiagnostics(GuiScreen parentScreen) {
@@ -49,12 +55,12 @@ public final class GuiDiagnostics extends GuiScreen {
         int center = width / 2;
         int contentWidth = Math.min(620, Math.max(280, width - 32));
         int contentLeft = (width - contentWidth) / 2;
-        int panelHeight = 4 * 14 + PANEL_PADDING * 2;
+        int panelHeight = visibleRowCapacity() * 14 + PANEL_PADDING * 2;
         int groupHeight = panelHeight + 46;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
         int tabTop = groupTop + 20;
         int gap = 4;
-        int tabWidth = (contentWidth - gap * 2) / 3;
+        int tabWidth = (contentWidth - gap * 3) / 4;
         addCategoryButton(OVERVIEW_TAB, Category.OVERVIEW,
                 contentLeft, tabTop, tabWidth, "furusato.diagnostics.tab.overview");
         addCategoryButton(RENDERING_TAB, Category.RENDERING,
@@ -63,10 +69,15 @@ public final class GuiDiagnostics extends GuiScreen {
         addCategoryButton(COMPATIBILITY_TAB, Category.COMPATIBILITY,
                 contentLeft + (tabWidth + gap) * 2, tabTop, tabWidth,
                 "furusato.diagnostics.tab.compatibility");
-        addButton(new GuiButton(COPY_REPORT, center - 100, height - 51, 98, 20,
+        addCategoryButton(ISSUES_TAB, Category.ISSUES,
+                contentLeft + (tabWidth + gap) * 3, tabTop, tabWidth,
+                "furusato.diagnostics.tab.issues");
+        addButton(new GuiResponsiveButton(COPY_REPORT, center - 151, height - 51, 98, 20,
                 I18n.format(copyLabelKey)));
-        addButton(new GuiButton(EXPORT_REPORT, center + 2, height - 51, 98, 20,
+        addButton(new GuiResponsiveButton(EXPORT_REPORT, center - 49, height - 51, 98, 20,
                 I18n.format(exportLabelKey)));
+        addButton(new GuiResponsiveButton(OPEN_REPORTS, center + 53, height - 51, 98, 20,
+                I18n.format(openLabelKey)));
         addButton(new GuiButton(DONE, center - 100, height - 27, 200, 20,
                 I18n.format("gui.done")));
     }
@@ -92,7 +103,10 @@ public final class GuiDiagnostics extends GuiScreen {
         boolean safeMode = FurusatoEarlyConfig.isSafeModeEnabled();
         List<String> transformers = CompatibilityDiagnostics.transformerClassNames();
         List<String> thirdParty = CompatibilityDiagnostics.thirdPartyTransformerClassNames();
-        String health = healthFor(patchStatus, unicodeResources, safeMode);
+        List<DiagnosticAssessment.Finding> findings = DiagnosticAssessment.assess(
+                patchStatus, unicodeResources, safeMode, thirdParty.size());
+        String health = findings.isEmpty()
+                ? "furusato.diagnostics.ok" : "furusato.diagnostics.warning";
 
         addRow(Category.OVERVIEW,
                 "furusato.diagnostics.version", Furusato.VERSION, 0xFFFFFF);
@@ -124,9 +138,19 @@ public final class GuiDiagnostics extends GuiScreen {
         addRow(Category.OVERVIEW, "furusato.diagnostics.health", I18n.format(health),
                 "furusato.diagnostics.ok".equals(health) ? 0x55FF55 : 0xFFAA00);
 
+        if (findings.isEmpty()) {
+            addRow(Category.ISSUES, "furusato.diagnostics.health",
+                    I18n.format("furusato.diagnostics.ok"), 0x55FF55);
+        } else {
+            for (DiagnosticAssessment.Finding finding : findings) {
+                addRow(Category.ISSUES, finding.titleKey(),
+                        I18n.format(finding.adviceKey()), 0xFFAA00);
+            }
+        }
+
         report = buildReport(patchStatus, patch, config, selectedScale,
                 effectiveScale, unicodeResources, safeMode, health, configPath,
-                transformers, thirdParty);
+                transformers, thirdParty, findings);
     }
 
     private void addRow(Category category, String labelKey, String value, int color) {
@@ -143,16 +167,6 @@ public final class GuiDiagnostics extends GuiScreen {
         } catch (IOException ignored) {
             return false;
         }
-    }
-
-    private String healthFor(String patchStatus, boolean resourcesAvailable,
-            boolean safeMode) {
-        if (!resourcesAvailable || "FAILED".equals(patchStatus)
-                || "SKIPPED".equals(patchStatus) || "UNKNOWN".equals(patchStatus)
-                || safeMode) {
-            return "furusato.diagnostics.warning";
-        }
-        return "furusato.diagnostics.ok";
     }
 
     private String localizeStatus(String status) {
@@ -176,19 +190,26 @@ public final class GuiDiagnostics extends GuiScreen {
     private String buildReport(String patchStatus, PatchDiagnostics.Result patch,
             File config, int selectedScale, int effectiveScale,
             boolean unicodeResources, boolean safeMode, String healthKey,
-            String configPath, List<String> transformers, List<String> thirdParty) {
+            String configPath, List<String> transformers, List<String> thirdParty,
+            List<DiagnosticAssessment.Finding> findings) {
         String detail = patch == null ? "unavailable" : patch.getDetail();
-        return "Furusato " + Furusato.VERSION + "\n"
-                + "Minecraft 1.12.2 / Forge " + ForgeVersion.getVersion() + "\n"
-                + "unicode_gui_scale: " + patchStatus + " (" + detail + ")\n"
-                + "safeMode: " + safeMode + "\n"
-                + "forceUnicodeFont: " + mc.gameSettings.forceUnicodeFont + "\n"
-                + "guiScale: " + selectedScale + " (effective: " + effectiveScale + ")\n"
-                + "unicodeResources: " + unicodeResources + "\n"
-                + "config: " + (config == null ? "unavailable" : configPath) + "\n"
-                + "transformers: " + join(transformers) + "\n"
-                + "thirdPartyTransformers: " + join(thirdParty) + "\n"
-                + "health: " + I18n.format(healthKey);
+        StringBuilder result = new StringBuilder("Furusato ").append(Furusato.VERSION).append('\n')
+                .append("Minecraft 1.12.2 / Forge ").append(ForgeVersion.getVersion()).append('\n')
+                .append("unicode_gui_scale: ").append(patchStatus).append(" (").append(detail).append(")\n")
+                .append("safeMode: ").append(safeMode).append('\n')
+                .append("forceUnicodeFont: ").append(mc.gameSettings.forceUnicodeFont).append('\n')
+                .append("guiScale: ").append(selectedScale).append(" (effective: ").append(effectiveScale).append(")\n")
+                .append("unicodeResources: ").append(unicodeResources).append('\n')
+                .append("config: ").append(config == null ? "unavailable" : configPath).append('\n')
+                .append("transformers: ").append(join(transformers)).append('\n')
+                .append("thirdPartyTransformers: ").append(join(thirdParty)).append('\n')
+                .append("health: ").append(I18n.format(healthKey));
+        for (DiagnosticAssessment.Finding finding : findings) {
+            result.append('\n').append("warning: ")
+                    .append(I18n.format(finding.titleKey())).append(" — ")
+                    .append(I18n.format(finding.adviceKey()));
+        }
+        return result.toString();
     }
 
     private String join(List<String> values) {
@@ -229,12 +250,19 @@ public final class GuiDiagnostics extends GuiScreen {
                 exportLabelKey = "furusato.diagnostics.exportFailed";
             }
             button.displayString = I18n.format(exportLabelKey);
+        } else if (button.id == OPEN_REPORTS) {
+            if (!openReportsFolder()) {
+                openLabelKey = "furusato.diagnostics.openFailed";
+                button.displayString = I18n.format(openLabelKey);
+            }
         } else if (button.id == OVERVIEW_TAB) {
             selectCategory(Category.OVERVIEW);
         } else if (button.id == RENDERING_TAB) {
             selectCategory(Category.RENDERING);
         } else if (button.id == COMPATIBILITY_TAB) {
             selectCategory(Category.COMPATIBILITY);
+        } else if (button.id == ISSUES_TAB) {
+            selectCategory(Category.ISSUES);
         } else if (button.id == DONE) {
             mc.displayGuiScreen(parentScreen);
         }
@@ -246,15 +274,8 @@ public final class GuiDiagnostics extends GuiScreen {
     }
 
     private boolean exportReport() {
-        File configFile = FurusatoEarlyConfig.getConfigurationFile();
-        File configDirectory = configFile == null ? null : configFile.getParentFile();
-        File gameDirectory = configDirectory == null
-                ? new File(".") : configDirectory.getParentFile();
-        if (gameDirectory == null) {
-            gameDirectory = new File(".");
-        }
-        File reportFile = new File(new File(gameDirectory, "logs"),
-                "furusato-diagnostics.txt");
+        File reportFile = DiagnosticReportFiles.uniqueFile(reportsDirectory(),
+                new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()));
         File parent = reportFile.getParentFile();
         if (!parent.isDirectory() && !parent.mkdirs()) {
             return false;
@@ -273,6 +294,36 @@ public final class GuiDiagnostics extends GuiScreen {
         }
     }
 
+    private File reportsDirectory() {
+        File configFile = FurusatoEarlyConfig.getConfigurationFile();
+        File configDirectory = configFile == null ? null : configFile.getParentFile();
+        File gameDirectory = configDirectory == null
+                ? new File(".") : configDirectory.getParentFile();
+        return new File(gameDirectory == null ? new File(".") : gameDirectory,
+                "furusato-reports");
+    }
+
+    private boolean openReportsFolder() {
+        File directory = reportsDirectory();
+        if (!directory.isDirectory() && !directory.mkdirs()) {
+            return false;
+        }
+        try {
+            if (!Desktop.isDesktopSupported()
+                    || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                return false;
+            }
+            Desktop.getDesktop().open(directory);
+            return true;
+        } catch (IOException | RuntimeException error) {
+            if (Furusato.getLogger() != null) {
+                Furusato.getLogger().error("Could not open diagnostics directory {}",
+                        directory, error);
+            }
+            return false;
+        }
+    }
+
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
@@ -280,7 +331,7 @@ public final class GuiDiagnostics extends GuiScreen {
         int contentLeft = (width - contentWidth) / 2;
         int contentRight = contentLeft + contentWidth;
         int rowHeight = 14;
-        int panelHeight = 4 * rowHeight + PANEL_PADDING * 2;
+        int panelHeight = visibleRowCapacity() * rowHeight + PANEL_PADDING * 2;
         int groupHeight = panelHeight + 46;
         int groupTop = Math.max(8, (height - 55 - groupHeight) / 2);
         int panelTop = groupTop + 46;
@@ -302,6 +353,7 @@ public final class GuiDiagnostics extends GuiScreen {
         int valueX = labelX + labelWidth + 18;
         int maxValueWidth = Math.max(60,
                 contentRight - valueX - PANEL_PADDING);
+        Row hoveredRow = null;
         for (int index = 0; index < visibleRows.size(); index++) {
             Row row = visibleRows.get(index);
             int rowTop = panelTop + PANEL_PADDING + index * rowHeight;
@@ -313,6 +365,7 @@ public final class GuiDiagnostics extends GuiScreen {
                     && mouseY >= rowTop && mouseY < rowTop + rowHeight) {
                 drawRect(contentLeft + 2, rowTop, contentRight - 2,
                         rowTop + rowHeight, 0x22FFFFFF);
+                hoveredRow = row;
             }
             int textY = rowTop + (rowHeight - fontRenderer.FONT_HEIGHT) / 2 + 1;
             drawString(fontRenderer, row.label + ":", labelX, textY, 0xA0A0A0);
@@ -320,6 +373,16 @@ public final class GuiDiagnostics extends GuiScreen {
                     valueX, textY, row.color);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
+        if (hoveredRow != null
+                && fontRenderer.getStringWidth(hoveredRow.value) > maxValueWidth) {
+            drawHoveringText(fontRenderer.listFormattedStringToWidth(
+                    hoveredRow.value, Math.min(320, Math.max(180, width - 40))),
+                    mouseX, mouseY);
+        }
+    }
+
+    private int visibleRowCapacity() {
+        return Math.max(4, visibleRows().size());
     }
 
     private List<Row> visibleRows() {
@@ -407,6 +470,7 @@ public final class GuiDiagnostics extends GuiScreen {
     private enum Category {
         OVERVIEW,
         RENDERING,
-        COMPATIBILITY
+        COMPATIBILITY,
+        ISSUES
     }
 }
