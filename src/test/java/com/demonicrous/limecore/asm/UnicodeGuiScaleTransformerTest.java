@@ -2,6 +2,7 @@ package com.demonicrous.limecore.asm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,6 +21,7 @@ public final class UnicodeGuiScaleTransformerTest {
 
     @Test
     public void replacesUnicodeCheckAndPreservesStackBalance() throws IOException {
+        LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
         byte[] transformed = new UnicodeGuiScaleTransformer().transform(
                 TARGET,
                 TARGET,
@@ -51,6 +53,44 @@ public final class UnicodeGuiScaleTransformerTest {
         }
 
         assertEquals(1, replacementPairs);
+    }
+
+    @Test
+    public void returnsOriginalClassWhenPatchIsDisabled() throws IOException {
+        byte[] original = readClassBytes();
+        LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(false);
+        try {
+            byte[] transformed = new UnicodeGuiScaleTransformer().transform(
+                    TARGET, TARGET, original);
+            assertSame(original, transformed);
+        } finally {
+            LimeCoreEarlyConfig.setUnicodeGuiScaleEnabledForTests(true);
+        }
+    }
+
+    @Test
+    public void rejectsUnicodeMethodOnUnexpectedOwner() throws IOException {
+        byte[] original = readClassBytes();
+        ClassNode node = new ClassNode();
+        new ClassReader(original).accept(node, 0);
+
+        for (MethodNode method : node.methods) {
+            for (AbstractInsnNode instruction : method.instructions.toArray()) {
+                if (instruction instanceof MethodInsnNode) {
+                    MethodInsnNode call = (MethodInsnNode) instruction;
+                    if ("isUnicode".equals(call.name) || "func_152349_b".equals(call.name)) {
+                        call.owner = "example/UnexpectedOwner";
+                    }
+                }
+            }
+        }
+
+        org.objectweb.asm.ClassWriter writer = new org.objectweb.asm.ClassWriter(0);
+        node.accept(writer);
+        byte[] unexpectedOwner = writer.toByteArray();
+        byte[] transformed = new UnicodeGuiScaleTransformer().transform(
+                TARGET, TARGET, unexpectedOwner);
+        assertSame(unexpectedOwner, transformed);
     }
 
     private static byte[] readClassBytes() throws IOException {

@@ -1,5 +1,7 @@
 package com.demonicrous.limecore.asm;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.launchwrapper.IClassTransformer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,8 +18,11 @@ import org.objectweb.asm.tree.MethodNode;
 /** Preserves an odd GUI scale when Minecraft uses its Unicode font renderer. */
 public final class UnicodeGuiScaleTransformer implements IClassTransformer {
     private static final Logger LOGGER = LogManager.getLogger("Lime Core/ASM");
+    private static final String PATCH = "unicode_gui_scale";
     private static final String DEOBF_TARGET = "net.minecraft.client.gui.ScaledResolution";
-    private static final String OBF_TARGET = "bip";
+    private static final String OBF_TARGET = "bit";
+    private static final String DEOBF_OWNER = "net/minecraft/client/Minecraft";
+    private static final String OBF_OWNER = "bib";
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
@@ -25,44 +30,44 @@ public final class UnicodeGuiScaleTransformer implements IClassTransformer {
             return basicClass;
         }
 
-        ClassNode classNode = new ClassNode();
-        new ClassReader(basicClass).accept(classNode, 0);
-        int replacements = 0;
-
-        for (MethodNode method : classNode.methods) {
-            if (!"<init>".equals(method.name)) {
-                continue;
-            }
-
-            for (AbstractInsnNode instruction : method.instructions.toArray()) {
-                if (!(instruction instanceof MethodInsnNode)) {
-                    continue;
-                }
-
-                MethodInsnNode call = (MethodInsnNode) instruction;
-                if (!isUnicodeCheck(call)) {
-                    continue;
-                }
-
-                // Consume the FontRenderer instance and replace isUnicode() with false.
-                InsnList replacement = new InsnList();
-                replacement.add(new InsnNode(Opcodes.POP));
-                replacement.add(new InsnNode(Opcodes.ICONST_0));
-                method.instructions.insertBefore(call, replacement);
-                method.instructions.remove(call);
-                replacements++;
-            }
-        }
-
-        if (replacements == 0) {
-            LOGGER.warn("Could not locate the Unicode GUI-scale check in {}", transformedName);
+        if (!LimeCoreEarlyConfig.isUnicodeGuiScaleEnabled()) {
+            PatchDiagnostics.disabled(PATCH);
+            LOGGER.info("Unicode GUI-scale patch is disabled");
             return basicClass;
         }
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        classNode.accept(writer);
-        LOGGER.info("Preserved odd Unicode GUI scales ({} replacement(s))", replacements);
-        return writer.toByteArray();
+        try {
+            ClassReader reader = new ClassReader(basicClass);
+            ClassNode classNode = new ClassNode();
+            reader.accept(classNode, 0);
+            List<Match> matches = findUnicodeChecks(classNode);
+
+            if (matches.size() != 1) {
+                String detail = "expected exactly one Minecraft.isUnicode() call, found "
+                        + matches.size();
+                PatchDiagnostics.skipped(PATCH, detail);
+                LOGGER.warn("Unicode GUI-scale patch skipped: {}", detail);
+                return basicClass;
+            }
+
+            Match match = matches.get(0);
+            MethodInsnNode call = match.instruction;
+            InsnList replacement = new InsnList();
+            replacement.add(new InsnNode(Opcodes.POP));
+            replacement.add(new InsnNode(Opcodes.ICONST_0));
+            match.method.instructions.insertBefore(call, replacement);
+            match.method.instructions.remove(call);
+
+            ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
+            classNode.accept(writer);
+            PatchDiagnostics.applied(PATCH, "replaced one Minecraft.isUnicode() call");
+            LOGGER.info("Preserved odd Unicode GUI scales");
+            return writer.toByteArray();
+        } catch (RuntimeException error) {
+            PatchDiagnostics.failed(PATCH, error);
+            LOGGER.error("Unicode GUI-scale patch failed; using the original class", error);
+            return basicClass;
+        }
     }
 
     private static boolean isTarget(String name, String transformedName) {
@@ -71,10 +76,38 @@ public final class UnicodeGuiScaleTransformer implements IClassTransformer {
                 || OBF_TARGET.equals(name);
     }
 
+    private static List<Match> findUnicodeChecks(ClassNode classNode) {
+        List<Match> matches = new ArrayList<Match>();
+        for (MethodNode method : classNode.methods) {
+            if (!"<init>".equals(method.name)) {
+                continue;
+            }
+            for (AbstractInsnNode instruction : method.instructions.toArray()) {
+                if (instruction instanceof MethodInsnNode
+                        && isUnicodeCheck((MethodInsnNode) instruction)) {
+                    matches.add(new Match(method, (MethodInsnNode) instruction));
+                }
+            }
+        }
+        return matches;
+    }
+
     private static boolean isUnicodeCheck(MethodInsnNode call) {
         return call.getOpcode() == Opcodes.INVOKEVIRTUAL
                 && "()Z".equals(call.desc)
-                && ("isUnicode".equals(call.name) || "func_152349_b".equals(call.name));
+                && (DEOBF_OWNER.equals(call.owner) || OBF_OWNER.equals(call.owner))
+                && ("isUnicode".equals(call.name)
+                || "func_152349_b".equals(call.name)
+                || "e".equals(call.name));
+    }
+
+    private static final class Match {
+        private final MethodNode method;
+        private final MethodInsnNode instruction;
+
+        private Match(MethodNode method, MethodInsnNode instruction) {
+            this.method = method;
+            this.instruction = instruction;
+        }
     }
 }
-

@@ -29,4 +29,3 @@ public final class LimeCore {
         logger.info("Lime Core {} initialized", VERSION);
     }
 }
-
