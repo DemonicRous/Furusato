@@ -118,15 +118,15 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
                 I18n.format("furusato.effects.card.containers"));
         drawEffectCard(layout.blurX, top, layout.blurWidth,
                 I18n.format("furusato.effects.card.blur"));
-        drawString(fontRenderer, I18n.format("furusato.effects.hotbarSpeed",
+        drawCardValue(I18n.format("furusato.effects.hotbarSpeed",
                         denormalize(hotbarDuration.getValue(), 50, 180)),
-                layout.hotbarX + 12, top + 79, 0xA8A4B0);
-        drawString(fontRenderer, I18n.format("furusato.effects.containerSpeed",
+                layout.hotbarX, top + 79, layout.hotbarWidth);
+        drawCardValue(I18n.format("furusato.effects.containerSpeed",
                         denormalize(containerDuration.getValue(), 80, 400)),
-                layout.containerX + 12, top + 57, 0xA8A4B0);
-        drawString(fontRenderer, I18n.format("furusato.effects.blurRadius",
+                layout.containerX, top + 57, layout.containerWidth);
+        drawCardValue(I18n.format("furusato.effects.blurRadius",
                         denormalize(blurRadius.getValue(), 2, 12)),
-                layout.blurX + 12, top + 57, 0xA8A4B0);
+                layout.blurX, top + 57, layout.blurWidth);
         if (statusKey != null) {
             drawCenteredString(fontRenderer, I18n.format(statusKey),
                     width / 2, top + 132, statusColor);
@@ -193,6 +193,19 @@ public final class GuiEffectsSettings extends GuiFurusatoScreen {
                 y + 9, 0xE8E4F0);
         drawRect(x + 11, y + 24, x + cardWidth - 11, y + 25,
                 0x505000FF);
+    }
+
+    private void drawCardValue(String value, int x, int y, int cardWidth) {
+        int availableWidth = Math.max(0, cardWidth - 24);
+        String rendered = value;
+        if (fontRenderer.getStringWidth(rendered) > availableWidth) {
+            String ellipsis = "...";
+            int textWidth = Math.max(0, availableWidth
+                    - fontRenderer.getStringWidth(ellipsis));
+            rendered = fontRenderer.trimStringToWidth(rendered, textWidth)
+                    + ellipsis;
+        }
+        drawString(fontRenderer, rendered, x + 12, y, 0xA8A4B0);
     }
 
     private static final class CardLayout {
