@@ -183,11 +183,11 @@ public final class GuiFontSettings extends GuiScreen {
                 + Math.max(0, paragraphs.size() - 1) * paragraphGap;
         int left = mouseX + 12;
         int top = mouseY - 12;
-        if (left + tooltipWidth + 8 > width) {
+        if (left + tooltipWidth + 12 > width) {
             left = mouseX - 12 - tooltipWidth;
         }
-        left = Math.max(4, left);
-        top = Math.max(5, Math.min(top, height - tooltipHeight - 5));
+        left = Math.max(7, left);
+        top = Math.max(7, Math.min(top, height - tooltipHeight - 7));
 
         RenderHelper.disableStandardItemLighting();
         GlStateManager.disableLighting();
@@ -220,24 +220,29 @@ public final class GuiFontSettings extends GuiScreen {
                 | borderTop & 0xFF000000;
         int right = left + tooltipWidth;
         int bottom = top + tooltipHeight;
+        int padding = 2;
+        int boxLeft = left - 4 - padding;
+        int boxTop = top - 4 - padding;
+        int boxRight = right + 4 + padding;
+        int boxBottom = bottom + 4 + padding;
 
-        drawGradientRect(left - 3, top - 4, right + 3, top - 3,
+        drawGradientRect(boxLeft + 1, boxTop, boxRight - 1, boxTop + 1,
                 background, background);
-        drawGradientRect(left - 3, bottom + 3, right + 3, bottom + 4,
+        drawGradientRect(boxLeft + 1, boxBottom - 1, boxRight - 1, boxBottom,
                 background, background);
-        drawGradientRect(left - 3, top - 3, right + 3, bottom + 3,
+        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxBottom - 1,
                 background, background);
-        drawGradientRect(left - 4, top - 3, left - 3, bottom + 3,
+        drawGradientRect(boxLeft, boxTop + 1, boxLeft + 1, boxBottom - 1,
                 background, background);
-        drawGradientRect(right + 3, top - 3, right + 4, bottom + 3,
+        drawGradientRect(boxRight - 1, boxTop + 1, boxRight, boxBottom - 1,
                 background, background);
-        drawGradientRect(left - 3, top - 2, left - 2, bottom + 2,
+        drawGradientRect(boxLeft + 1, boxTop + 2, boxLeft + 2, boxBottom - 2,
                 borderTop, borderBottom);
-        drawGradientRect(right + 2, top - 2, right + 3, bottom + 2,
+        drawGradientRect(boxRight - 2, boxTop + 2, boxRight - 1, boxBottom - 2,
                 borderTop, borderBottom);
-        drawGradientRect(left - 3, top - 3, right + 3, top - 2,
+        drawGradientRect(boxLeft + 1, boxTop + 1, boxRight - 1, boxTop + 2,
                 borderTop, borderTop);
-        drawGradientRect(left - 3, bottom + 2, right + 3, bottom + 3,
+        drawGradientRect(boxLeft + 1, boxBottom - 2, boxRight - 1, boxBottom - 1,
                 borderBottom, borderBottom);
     }
 
