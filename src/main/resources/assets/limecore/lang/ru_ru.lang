@@ -1,0 +1,8 @@
+limecore.font.title=Настройки шрифта
+limecore.font.guiScale=Масштаб интерфейса: %s (фактически: %s)
+limecore.font.forceUnicode=Принудительный Unicode-шрифт: %s
+limecore.font.preview=Предпросмотр
+limecore.font.sample=Lime Core — English / Русский
+limecore.font.patchEnabled=Нечётный масштаб Unicode сохраняется
+limecore.font.patchDisabled=Unicode-патч отключён; после изменения конфигурации нужен перезапуск
+

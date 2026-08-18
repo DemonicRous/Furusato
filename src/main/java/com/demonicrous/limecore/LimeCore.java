@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
         version = LimeCore.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
         dependencies = "required-after:forge@[14.23.5.2847,)",
+        guiFactory = "com.demonicrous.limecore.client.LimeCoreGuiFactory",
         clientSideOnly = true
 )
 public final class LimeCore {

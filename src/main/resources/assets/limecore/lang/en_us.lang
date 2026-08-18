@@ -1,0 +1,8 @@
+limecore.font.title=Font Settings
+limecore.font.guiScale=GUI Scale: %s (effective: %s)
+limecore.font.forceUnicode=Force Unicode Font: %s
+limecore.font.preview=Preview
+limecore.font.sample=Lime Core - English / Русский
+limecore.font.patchEnabled=Odd Unicode GUI scales are preserved
+limecore.font.patchDisabled=Unicode GUI scale patch is disabled; restart required after changing the config
+
